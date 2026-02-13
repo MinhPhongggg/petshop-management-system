@@ -1,0 +1,13 @@
+# Bỏ qua thư viện nặng
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Bỏ qua file môi trường (chứa mật khẩu)
+.env
+
+# Bỏ qua file log và build
+dist/
+build/
+*.log
+.DS_Store

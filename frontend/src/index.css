@@ -1,0 +1,175 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply font-sans text-gray-800 bg-petshop-cream antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-petshop-orange text-white font-semibold rounded-full 
+           hover:bg-orange-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg
+           focus:outline-none focus:ring-2 focus:ring-petshop-orange focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 bg-petshop-green text-white font-semibold rounded-full 
+           hover:bg-teal-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg
+           focus:outline-none focus:ring-2 focus:ring-petshop-green focus:ring-offset-2;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 border-2 border-petshop-orange text-petshop-orange font-semibold rounded-full 
+           hover:bg-petshop-orange hover:text-white transition-all duration-300 transform hover:scale-105
+           focus:outline-none focus:ring-2 focus:ring-petshop-orange focus:ring-offset-2;
+  }
+
+  .card {
+    @apply bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden;
+  }
+
+  .card-hover {
+    @apply transform hover:-translate-y-2;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-petshop-orange focus:ring-2 
+           focus:ring-petshop-orange/20 focus:outline-none transition-all duration-200;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-gray-800 mb-4;
+  }
+
+  .section-subtitle {
+    @apply text-lg text-gray-600 mb-8;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-orange {
+    @apply bg-petshop-orange/10 text-petshop-orange;
+  }
+
+  .badge-green {
+    @apply bg-petshop-green/10 text-petshop-green;
+  }
+
+  .badge-blue {
+    @apply bg-petshop-blue/10 text-petshop-blue;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-petshop-orange to-petshop-yellow bg-clip-text text-transparent;
+  }
+
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF6B35;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e55a25;
+}
+
+/* Swiper custom styles */
+.swiper-pagination-bullet-active {
+  background: #FF6B35 !important;
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+  color: #FF6B35 !important;
+}
+
+/* Toast custom styles */
+.toast-custom {
+  font-family: 'Inter', sans-serif;
+}
