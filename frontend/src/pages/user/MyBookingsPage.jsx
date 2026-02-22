@@ -19,45 +19,7 @@ const MyBookingsPage = () => {
       const response = await bookingsApi.getMyBookings();
       setBookings(response.data);
     } catch (error) {
-      // Mock data
-      setBookings([
-        {
-          id: 1,
-          bookingCode: 'BK-2024001',
-          serviceName: 'Tắm và Vệ sinh',
-          petName: 'Milu',
-          petType: 'DOG',
-          bookingDate: '2024-01-25',
-          bookingTime: '09:00',
-          status: 'CONFIRMED',
-          totalAmount: 250000,
-          notes: 'Chó nhát người, cần nhẹ nhàng',
-        },
-        {
-          id: 2,
-          bookingCode: 'BK-2024002',
-          serviceName: 'Cắt tỉa lông',
-          petName: 'Bông',
-          petType: 'CAT',
-          bookingDate: '2024-01-28',
-          bookingTime: '14:00',
-          status: 'PENDING',
-          totalAmount: 350000,
-          notes: '',
-        },
-        {
-          id: 3,
-          bookingCode: 'BK-2024003',
-          serviceName: 'Combo Spa VIP',
-          petName: 'Lucky',
-          petType: 'DOG',
-          bookingDate: '2024-01-20',
-          bookingTime: '10:00',
-          status: 'COMPLETED',
-          totalAmount: 550000,
-          notes: 'Golden Retriever 2 tuổi',
-        },
-      ]);
+      console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
     }

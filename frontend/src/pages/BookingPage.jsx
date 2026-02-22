@@ -48,14 +48,7 @@ const BookingPage = () => {
       const response = await servicesApi.getActive();
       setServices(response.data);
     } catch (error) {
-      // Mock data
-      setServices([
-        { id: 1, name: 'Tắm Spa toàn thân', slug: 'tam-spa-toan-than', duration: 60, pricingList: [{ price: 150000 }] },
-        { id: 2, name: 'Cắt tỉa tạo kiểu', slug: 'cat-tia-tao-kieu', duration: 90, pricingList: [{ price: 200000 }] },
-        { id: 3, name: 'Combo Spa cao cấp', slug: 'combo-spa-cao-cap', duration: 180, pricingList: [{ price: 450000 }] },
-        { id: 4, name: 'Cắt móng', slug: 'cat-mong', duration: 20, pricingList: [{ price: 50000 }] },
-        { id: 5, name: 'Vệ sinh tai & mắt', slug: 've-sinh-tai-mat', duration: 30, pricingList: [{ price: 80000 }] },
-      ]);
+      console.error('Error fetching services:', error);
     } finally {
       setLoading(false);
     }

@@ -29,53 +29,8 @@ const AdminServicesPage = () => {
       const response = await servicesApi.getAll();
       setServices(response.data);
     } catch (error) {
-      // Mock data
-      setServices([
-        {
-          id: 1,
-          name: 'Tắm và Vệ sinh',
-          description: 'Dịch vụ tắm rửa, vệ sinh tai, cắt móng cho thú cưng',
-          duration: 60,
-          basePrice: 150000,
-          image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300',
-          petTypes: ['DOG', 'CAT'],
-          status: 'ACTIVE',
-          bookingsCount: 45,
-        },
-        {
-          id: 2,
-          name: 'Cắt tỉa lông',
-          description: 'Cắt tỉa, tạo kiểu lông theo yêu cầu',
-          duration: 90,
-          basePrice: 250000,
-          image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=300',
-          petTypes: ['DOG', 'CAT'],
-          status: 'ACTIVE',
-          bookingsCount: 32,
-        },
-        {
-          id: 3,
-          name: 'Combo Spa VIP',
-          description: 'Trọn gói tắm, cắt tỉa, massage thư giãn',
-          duration: 120,
-          basePrice: 450000,
-          image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=300',
-          petTypes: ['DOG', 'CAT'],
-          status: 'ACTIVE',
-          bookingsCount: 28,
-        },
-        {
-          id: 4,
-          name: 'Khám sức khỏe',
-          description: 'Kiểm tra sức khỏe tổng quát cho thú cưng',
-          duration: 45,
-          basePrice: 200000,
-          image: 'https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?w=300',
-          petTypes: ['DOG', 'CAT', 'BIRD', 'HAMSTER'],
-          status: 'INACTIVE',
-          bookingsCount: 15,
-        },
-      ]);
+      console.error('Error fetching services:', error);
+      toast.error('Không thể tải danh sách dịch vụ');
     } finally {
       setLoading(false);
     }

@@ -18,40 +18,7 @@ const MyOrdersPage = () => {
       const response = await ordersApi.getMyOrders();
       setOrders(response.data);
     } catch (error) {
-      // Mock data
-      setOrders([
-        {
-          id: 1,
-          orderNumber: 'ORD-2024001',
-          createdAt: '2024-01-15T10:30:00',
-          status: 'DELIVERED',
-          totalAmount: 850000,
-          items: [
-            { id: 1, productName: 'Royal Canin Adult Dog Food', quantity: 2, price: 350000, image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=100' },
-            { id: 2, productName: 'Pate cho mèo Whiskas', quantity: 3, price: 50000, image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=100' },
-          ],
-        },
-        {
-          id: 2,
-          orderNumber: 'ORD-2024002',
-          createdAt: '2024-01-18T14:20:00',
-          status: 'SHIPPING',
-          totalAmount: 1250000,
-          items: [
-            { id: 3, productName: 'Lồng vận chuyển thú cưng', quantity: 1, price: 800000, image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=100' },
-          ],
-        },
-        {
-          id: 3,
-          orderNumber: 'ORD-2024003',
-          createdAt: '2024-01-20T09:15:00',
-          status: 'PENDING',
-          totalAmount: 450000,
-          items: [
-            { id: 4, productName: 'Đồ chơi cho chó', quantity: 2, price: 150000, image: 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=100' },
-          ],
-        },
-      ]);
+      console.error('Error fetching orders:', error);
     } finally {
       setLoading(false);
     }

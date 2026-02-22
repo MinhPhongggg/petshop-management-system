@@ -28,19 +28,8 @@ const AdminProductsPage = () => {
       setTotalPages(productsRes.data.totalPages || 1);
       setCategories(categoriesRes.data);
     } catch (error) {
-      // Mock data
-      setProducts([
-        { id: 1, name: 'Royal Canin Adult Dog Food', category: 'Thức ăn cho chó', price: 350000, salePrice: 320000, stock: 50, status: 'ACTIVE', image: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=100' },
-        { id: 2, name: 'Pate cho mèo Whiskas', category: 'Thức ăn cho mèo', price: 50000, salePrice: null, stock: 100, status: 'ACTIVE', image: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=100' },
-        { id: 3, name: 'Lồng vận chuyển thú cưng', category: 'Phụ kiện', price: 800000, salePrice: 750000, stock: 15, status: 'ACTIVE', image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=100' },
-        { id: 4, name: 'Đồ chơi bóng cho chó', category: 'Đồ chơi', price: 150000, salePrice: null, stock: 0, status: 'OUT_OF_STOCK', image: 'https://images.unsplash.com/photo-1576201836106-db1758fd1c97?w=100' },
-      ]);
-      setCategories([
-        { id: 1, name: 'Thức ăn cho chó' },
-        { id: 2, name: 'Thức ăn cho mèo' },
-        { id: 3, name: 'Phụ kiện' },
-        { id: 4, name: 'Đồ chơi' },
-      ]);
+      console.error('Error fetching data:', error);
+      toast.error('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
     }

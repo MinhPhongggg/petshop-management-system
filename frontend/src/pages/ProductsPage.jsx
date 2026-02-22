@@ -36,14 +36,7 @@ const ProductsPage = () => {
       const response = await categoriesApi.getAll();
       setCategories(response.data);
     } catch (error) {
-      // Mock data
-      setCategories([
-        { id: 1, name: 'Thức ăn', slug: 'thuc-an' },
-        { id: 2, name: 'Phụ kiện', slug: 'phu-kien' },
-        { id: 3, name: 'Đồ chơi', slug: 'do-choi' },
-        { id: 4, name: 'Chuồng', slug: 'chuong' },
-        { id: 5, name: 'Chăm sóc', slug: 'cham-soc' },
-      ]);
+      console.error('Error fetching categories:', error);
     }
   };
 
@@ -75,17 +68,7 @@ const ProductsPage = () => {
       setProducts(response.data.content || response.data);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      // Mock data
-      setProducts([
-        { id: 1, name: 'Thức ăn hạt Royal Canin cho chó', slug: 'thuc-an-royal-canin', basePrice: 450000, salePrice: 380000, images: [{ url: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.5, reviewCount: 128, soldCount: 1500, featured: true },
-        { id: 2, name: 'Vòng cổ cho chó có gắn GPS', slug: 'vong-co-gps', basePrice: 850000, salePrice: 720000, images: [{ url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }], category: { name: 'Phụ kiện' }, averageRating: 4.2, reviewCount: 89, soldCount: 850 },
-        { id: 3, name: 'Chuồng mèo cao cấp 3 tầng', slug: 'chuong-meo-cao-cap', basePrice: 1200000, salePrice: 950000, images: [{ url: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=400' }], category: { name: 'Chuồng' }, averageRating: 4.8, reviewCount: 56, soldCount: 234, featured: true },
-        { id: 4, name: 'Bộ đồ chơi cho thú cưng 10 món', slug: 'bo-do-choi-10-mon', basePrice: 180000, salePrice: 145000, images: [{ url: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400' }], category: { name: 'Đồ chơi' }, averageRating: 4.0, reviewCount: 234, soldCount: 2100 },
-        { id: 5, name: 'Sữa tắm dưỡng lông cho chó', slug: 'sua-tam-duong-long', basePrice: 180000, images: [{ url: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400' }], category: { name: 'Chăm sóc' }, averageRating: 4.3, reviewCount: 67, soldCount: 456 },
-        { id: 6, name: 'Bát ăn tự động thông minh', slug: 'bat-an-tu-dong', basePrice: 650000, salePrice: 550000, images: [{ url: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400' }], category: { name: 'Phụ kiện' }, averageRating: 4.6, reviewCount: 45, soldCount: 189 },
-        { id: 7, name: 'Thức ăn hữu cơ cho mèo', slug: 'thuc-an-huu-co-meo', basePrice: 320000, images: [{ url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.7, reviewCount: 156, soldCount: 890 },
-        { id: 8, name: 'Dây dắt chó cao cấp chống giật', slug: 'day-dat-cao-cap', basePrice: 200000, salePrice: 160000, images: [{ url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }], category: { name: 'Phụ kiện' }, averageRating: 4.4, reviewCount: 98, soldCount: 567 },
-      ]);
+      console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
     }

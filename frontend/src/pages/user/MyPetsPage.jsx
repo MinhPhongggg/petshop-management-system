@@ -38,42 +38,7 @@ const MyPetsPage = () => {
       const response = await petsApi.getMyPets();
       setPets(response.data);
     } catch (error) {
-      // Mock data
-      setPets([
-        {
-          id: 1,
-          name: 'Milu',
-          type: 'DOG',
-          breed: 'Poodle',
-          age: 2,
-          weight: 5.5,
-          gender: 'MALE',
-          image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=300',
-          notes: 'Nhát người lạ',
-        },
-        {
-          id: 2,
-          name: 'Bông',
-          type: 'CAT',
-          breed: 'Anh lông ngắn',
-          age: 1,
-          weight: 4.2,
-          gender: 'FEMALE',
-          image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=300',
-          notes: '',
-        },
-        {
-          id: 3,
-          name: 'Lucky',
-          type: 'DOG',
-          breed: 'Golden Retriever',
-          age: 3,
-          weight: 28,
-          gender: 'MALE',
-          image: 'https://images.unsplash.com/photo-1633722715463-d30f4f325e24?w=300',
-          notes: 'Thích chơi banh',
-        },
-      ]);
+      console.error('Error fetching pets:', error);
     } finally {
       setLoading(false);
     }

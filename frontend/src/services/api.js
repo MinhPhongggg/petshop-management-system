@@ -162,3 +162,12 @@ export const dashboardApi = {
   getDashboard: () => api.get('/dashboard'),
   getDashboardByRange: (startDate, endDate) => api.get('/dashboard/range', { params: { startDate, endDate } }),
 };
+
+// Users API (Admin)
+export const usersApi = {
+  getAll: (params) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  updateStatus: (id, status) => api.put(`/users/${id}/status`, null, { params: { status } }),
+  delete: (id) => api.delete(`/users/${id}`),
+};

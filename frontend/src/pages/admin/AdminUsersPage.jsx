@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiSearch, FiEdit2, FiTrash2, FiUserCheck, FiUserX, FiMail, FiPhone } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { usersApi } from '../../services/api';
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -15,64 +16,11 @@ const AdminUsersPage = () => {
 
   const fetchUsers = async () => {
     try {
-      // Mock data since we don't have usersApi
-      setUsers([
-        {
-          id: 1,
-          fullName: 'Nguyễn Văn Admin',
-          email: 'admin@petshop.com',
-          phone: '0901234567',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          createdAt: '2024-01-01',
-          ordersCount: 0,
-          avatar: null,
-        },
-        {
-          id: 2,
-          fullName: 'Trần Thị Staff',
-          email: 'staff@petshop.com',
-          phone: '0901234568',
-          role: 'STAFF',
-          status: 'ACTIVE',
-          createdAt: '2024-01-05',
-          ordersCount: 0,
-          avatar: null,
-        },
-        {
-          id: 3,
-          fullName: 'Nguyễn Văn A',
-          email: 'nva@email.com',
-          phone: '0901234569',
-          role: 'CUSTOMER',
-          status: 'ACTIVE',
-          createdAt: '2024-01-10',
-          ordersCount: 5,
-          avatar: null,
-        },
-        {
-          id: 4,
-          fullName: 'Trần Thị B',
-          email: 'ttb@email.com',
-          phone: '0901234570',
-          role: 'CUSTOMER',
-          status: 'ACTIVE',
-          createdAt: '2024-01-12',
-          ordersCount: 3,
-          avatar: null,
-        },
-        {
-          id: 5,
-          fullName: 'Lê Văn C',
-          email: 'lvc@email.com',
-          phone: '0901234571',
-          role: 'CUSTOMER',
-          status: 'INACTIVE',
-          createdAt: '2024-01-15',
-          ordersCount: 0,
-          avatar: null,
-        },
-      ]);
+      const response = await usersApi.getAll({ role: roleFilter });
+      setUsers(response.data.content || response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Không thể tải danh sách người dùng');
     } finally {
       setLoading(false);
     }
