@@ -50,6 +50,7 @@ export const authApi = {
 // Products API
 export const productsApi = {
   getAll: (params) => api.get('/products', { params }),
+  getAllAdmin: (params) => api.get('/products/admin/all', { params }), // Admin - lấy tất cả sản phẩm
   getById: (id) => api.get(`/products/${id}`),
   getBySlug: (slug) => api.get(`/products/slug/${slug}`),
   search: (keyword, params) => api.get('/products/search', { params: { keyword, ...params } }),

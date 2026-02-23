@@ -120,7 +120,7 @@ const ProductDetailPage = () => {
                   <SwiperSlide key={image.id || index}>
                     <div className="swiper-zoom-container">
                       <img
-                        src={image.url}
+                        src={image.imageUrl}
                         alt={`${product.name} - ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -140,7 +140,7 @@ const ProductDetailPage = () => {
                 {product.images?.map((image, index) => (
                   <SwiperSlide key={image.id || index}>
                     <img
-                      src={image.url}
+                      src={image.imageUrl}
                       alt={`Thumb ${index + 1}`}
                       className="w-full h-full object-cover rounded-xl cursor-pointer border-2 border-transparent hover:border-petshop-orange transition-colors"
                     />
@@ -381,7 +381,9 @@ const ProductDetailPage = () => {
             <h2 className="section-title mb-8">Sản phẩm liên quan</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {relatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <div key={product.id} className="h-full">
+                  <ProductCard product={product} />
+                </div>
               ))}
             </div>
           </section>

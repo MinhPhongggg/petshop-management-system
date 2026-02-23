@@ -28,7 +28,7 @@ const AdminProductsPage = () => {
   const fetchData = async () => {
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        productsApi.getAll({ page: currentPage - 1, size: 10, categoryId: categoryFilter }),
+        productsApi.getAllAdmin({ page: currentPage - 1, size: 10, categoryId: categoryFilter }),
         categoriesApi.getTree(),
       ]);
       setProducts(productsRes.data.content || productsRes.data);

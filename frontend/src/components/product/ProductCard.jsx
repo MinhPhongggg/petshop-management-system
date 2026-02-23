@@ -42,11 +42,11 @@ const ProductCard = ({ product }) => {
   return (
     <motion.div
       whileHover={{ y: -8 }}
-      className="card card-hover group"
+      className="card card-hover group h-full flex flex-col"
     >
-      <Link to={`/products/${product.slug}`}>
+      <Link to={`/products/${product.slug}`} className="flex flex-col h-full">
         {/* Image */}
-        <div className="relative aspect-square overflow-hidden">
+        <div className="relative aspect-square overflow-hidden flex-shrink-0">
           <img
             src={getProductImage()}
             alt={product.name}
@@ -90,14 +90,14 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Content */}
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-grow">
           {/* Category - BE returns categoryName instead of category.name */}
-          <p className="text-sm text-petshop-orange font-medium mb-1">
+          <p className="text-sm text-petshop-orange font-medium mb-1 line-clamp-1 h-5">
             {product.categoryName || product.category?.name}
           </p>
 
           {/* Name */}
-          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 group-hover:text-petshop-orange transition-colors">
+          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 h-12 group-hover:text-petshop-orange transition-colors">
             {product.name}
           </h3>
 
@@ -120,24 +120,19 @@ const ProductCard = ({ product }) => {
             </span>
           </div>
 
-          {/* Price - BE returns minPrice/maxPrice instead of salePrice */}
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-petshop-orange">
-              {formatPrice(displayPrice)}
-            </span>
-            {hasDiscount && originalPrice > displayPrice && (
-              <span className="text-sm text-gray-400 line-through">
-                {formatPrice(originalPrice)}
+          {/* Price - Push to bottom with mt-auto */}
+          <div className="mt-auto">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-lg font-bold text-petshop-orange">
+                {formatPrice(displayPrice)}
               </span>
-            )}
+              {hasDiscount && originalPrice > displayPrice && (
+                <span className="text-sm text-gray-400 line-through">
+                  {formatPrice(originalPrice)}
+                </span>
+              )}
+            </div>
           </div>
-
-          {/* Sold Count */}
-          {product.soldCount > 0 && (
-            <p className="text-sm text-gray-500 mt-2">
-              Đã bán {product.soldCount}
-            </p>
-          )}
         </div>
       </Link>
     </motion.div>

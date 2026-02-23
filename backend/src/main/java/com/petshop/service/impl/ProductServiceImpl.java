@@ -128,6 +128,44 @@ public class ProductServiceImpl implements ProductService {
         product.setSalePrice(request.getSalePrice());
         product.setFeatured(request.isFeatured());
         
+        // Cập nhật images - xóa cũ và thêm mới
+        if (request.getImages() != null) {
+            productImageRepository.deleteAll(product.getImages());
+            product.getImages().clear();
+            
+            Product finalProduct = product;
+            List<ProductImage> newImages = request.getImages().stream()
+                .map(imgReq -> ProductImage.builder()
+                    .product(finalProduct)
+                    .imageUrl(imgReq.getImageUrl())
+                    .isPrimary(imgReq.isPrimary())
+                    .sortOrder(imgReq.getSortOrder())
+                    .build())
+                .collect(Collectors.toList());
+            productImageRepository.saveAll(newImages);
+            product.setImages(newImages);
+        }
+        
+        // Cập nhật variants - xóa cũ và thêm mới
+        if (request.getVariants() != null) {
+            productVariantRepository.deleteAll(product.getVariants());
+            product.getVariants().clear();
+            
+            Product finalProduct2 = product;
+            List<ProductVariant> newVariants = request.getVariants().stream()
+                .map(varReq -> ProductVariant.builder()
+                    .product(finalProduct2)
+                    .name(varReq.getName())
+                    .sku(varReq.getSku())
+                    .price(varReq.getPrice())
+                    .stock(varReq.getStock())
+                    .active(true)
+                    .build())
+                .collect(Collectors.toList());
+            productVariantRepository.saveAll(newVariants);
+            product.setVariants(newVariants);
+        }
+        
         product = productRepository.save(product);
         return mapToDTO(product);
     }
@@ -138,9 +176,8 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại"));
         
-        // Soft delete
-        product.setActive(false);
-        productRepository.save(product);
+        // Hard delete - xóa thực sự khỏi database
+        productRepository.delete(product);
     }
     
     @Override
@@ -160,6 +197,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
         return productRepository.findByActiveIsTrue(pageable).map(this::mapToDTO);
+    }
+    
+    @Override
+    public Page<ProductDTO> getAllProductsAdmin(Pageable pageable) {
+        // Admin có thể xem tất cả sản phẩm (bao gồm inactive)
+        return productRepository.findAll(pageable).map(this::mapToDTO);
     }
     
     @Override

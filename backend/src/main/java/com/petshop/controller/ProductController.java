@@ -92,6 +92,13 @@ public class ProductController {
     
     // === Admin endpoints ===
     
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<Page<ProductDTO>> getAllProductsAdmin(
+            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(productService.getAllProductsAdmin(pageable));
+    }
+    
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductRequest request) {
