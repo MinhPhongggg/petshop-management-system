@@ -20,49 +20,8 @@ const AdminOrdersPage = () => {
       const response = await ordersApi.getAll({ status: activeTab === 'all' ? '' : activeTab });
       setOrders(response.data.content || response.data);
     } catch (error) {
-      // Mock data
-      setOrders([
-        {
-          id: 1,
-          orderNumber: 'ORD-2024001',
-          customer: { name: 'Nguyễn Văn A', phone: '0901234567', email: 'nva@email.com' },
-          shippingAddress: '123 Nguyễn Huệ, Q.1, TP.HCM',
-          items: [
-            { id: 1, productName: 'Royal Canin Adult Dog Food', quantity: 2, price: 350000 },
-            { id: 2, productName: 'Pate cho mèo Whiskas', quantity: 3, price: 50000 },
-          ],
-          totalAmount: 850000,
-          paymentMethod: 'COD',
-          status: 'PENDING',
-          createdAt: '2024-01-20T10:30:00',
-        },
-        {
-          id: 2,
-          orderNumber: 'ORD-2024002',
-          customer: { name: 'Trần Thị B', phone: '0901234568', email: 'ttb@email.com' },
-          shippingAddress: '456 Lê Lợi, Q.3, TP.HCM',
-          items: [
-            { id: 3, productName: 'Lồng vận chuyển thú cưng', quantity: 1, price: 800000 },
-          ],
-          totalAmount: 800000,
-          paymentMethod: 'BANKING',
-          status: 'CONFIRMED',
-          createdAt: '2024-01-20T09:15:00',
-        },
-        {
-          id: 3,
-          orderNumber: 'ORD-2024003',
-          customer: { name: 'Lê Văn C', phone: '0901234569', email: 'lvc@email.com' },
-          shippingAddress: '789 Hai Bà Trưng, Q.1, TP.HCM',
-          items: [
-            { id: 4, productName: 'Đồ chơi cho chó', quantity: 2, price: 150000 },
-          ],
-          totalAmount: 300000,
-          paymentMethod: 'MOMO',
-          status: 'SHIPPING',
-          createdAt: '2024-01-19T14:20:00',
-        },
-      ]);
+      console.error('Error fetching orders:', error);
+      toast.error('Không thể tải danh sách đơn hàng');
     } finally {
       setLoading(false);
     }

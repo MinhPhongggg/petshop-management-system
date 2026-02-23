@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiFilter, FiGrid, FiList, FiChevronDown, FiX, FiSearch } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiFilter, FiGrid, FiList, FiChevronDown, FiChevronRight, FiX, FiSearch } from 'react-icons/fi';
 import ProductCard from '../components/product/ProductCard';
 import { productsApi, categoriesApi } from '../services/api';
 
@@ -13,6 +13,7 @@ const ProductsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
+  const [expandedCategories, setExpandedCategories] = useState(new Set());
 
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
@@ -33,18 +34,99 @@ const ProductsPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await categoriesApi.getAll();
+      const response = await categoriesApi.getTree();
       setCategories(response.data);
     } catch (error) {
-      // Mock data
-      setCategories([
-        { id: 1, name: 'Thức ăn', slug: 'thuc-an' },
-        { id: 2, name: 'Phụ kiện', slug: 'phu-kien' },
-        { id: 3, name: 'Đồ chơi', slug: 'do-choi' },
-        { id: 4, name: 'Chuồng', slug: 'chuong' },
-        { id: 5, name: 'Chăm sóc', slug: 'cham-soc' },
-      ]);
+      console.error('Error fetching categories:', error);
     }
+  };
+
+  // Toggle expand/collapse danh mục
+  const toggleCategory = (categoryId) => {
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Component hiển thị một danh mục
+  const CategoryItem = ({ category, level = 0 }) => {
+    const hasChildren = category.children && category.children.length > 0;
+    const isExpanded = expandedCategories.has(category.id);
+    const isSelected = filters.category === category.slug;
+
+    return (
+      <div>
+        <div 
+          className={`flex items-center py-2 px-2 rounded-lg cursor-pointer transition-all
+            ${isSelected ? 'bg-petshop-orange/10' : 'hover:bg-gray-50'}
+          `}
+          style={{ paddingLeft: level > 0 ? `${level * 20 + 8}px` : '8px' }}
+        >
+          {/* Icon expand/collapse - kích thước cố định */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (hasChildren) toggleCategory(category.id);
+            }}
+            className={`w-6 h-6 flex items-center justify-center flex-shrink-0 rounded transition-colors
+              ${hasChildren ? 'hover:bg-gray-200 cursor-pointer' : 'cursor-default'}
+            `}
+          >
+            {hasChildren && (
+              <motion.div
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <FiChevronRight className="w-4 h-4 text-gray-500" />
+              </motion.div>
+            )}
+          </button>
+
+          {/* Radio - kích thước cố định */}
+          <input
+            type="radio"
+            name="category"
+            checked={isSelected}
+            onChange={() => handleFilterChange('category', category.slug)}
+            className="w-4 h-4 text-petshop-orange flex-shrink-0 mx-2"
+          />
+
+          {/* Tên danh mục */}
+          <span 
+            className={`${level === 0 ? 'font-medium' : ''} ${isSelected ? 'text-petshop-orange' : 'text-gray-700'}`}
+            onClick={() => handleFilterChange('category', category.slug)}
+          >
+            {category.name}
+            {hasChildren && (
+              <span className="text-xs text-gray-400 ml-1">({category.children.length})</span>
+            )}
+          </span>
+        </div>
+
+        {/* Danh mục con */}
+        <AnimatePresence>
+          {hasChildren && isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              {category.children.map(child => (
+                <CategoryItem key={child.id} category={child} level={level + 1} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
   };
 
   const fetchProducts = async () => {
@@ -75,17 +157,7 @@ const ProductsPage = () => {
       setProducts(response.data.content || response.data);
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
-      // Mock data
-      setProducts([
-        { id: 1, name: 'Thức ăn hạt Royal Canin cho chó', slug: 'thuc-an-royal-canin', basePrice: 450000, salePrice: 380000, images: [{ url: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.5, reviewCount: 128, soldCount: 1500, featured: true },
-        { id: 2, name: 'Vòng cổ cho chó có gắn GPS', slug: 'vong-co-gps', basePrice: 850000, salePrice: 720000, images: [{ url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }], category: { name: 'Phụ kiện' }, averageRating: 4.2, reviewCount: 89, soldCount: 850 },
-        { id: 3, name: 'Chuồng mèo cao cấp 3 tầng', slug: 'chuong-meo-cao-cap', basePrice: 1200000, salePrice: 950000, images: [{ url: 'https://images.unsplash.com/photo-1545249390-6bdfa286032f?w=400' }], category: { name: 'Chuồng' }, averageRating: 4.8, reviewCount: 56, soldCount: 234, featured: true },
-        { id: 4, name: 'Bộ đồ chơi cho thú cưng 10 món', slug: 'bo-do-choi-10-mon', basePrice: 180000, salePrice: 145000, images: [{ url: 'https://images.unsplash.com/photo-1535294435445-d7249524ef2e?w=400' }], category: { name: 'Đồ chơi' }, averageRating: 4.0, reviewCount: 234, soldCount: 2100 },
-        { id: 5, name: 'Sữa tắm dưỡng lông cho chó', slug: 'sua-tam-duong-long', basePrice: 180000, images: [{ url: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400' }], category: { name: 'Chăm sóc' }, averageRating: 4.3, reviewCount: 67, soldCount: 456 },
-        { id: 6, name: 'Bát ăn tự động thông minh', slug: 'bat-an-tu-dong', basePrice: 650000, salePrice: 550000, images: [{ url: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=400' }], category: { name: 'Phụ kiện' }, averageRating: 4.6, reviewCount: 45, soldCount: 189 },
-        { id: 7, name: 'Thức ăn hữu cơ cho mèo', slug: 'thuc-an-huu-co-meo', basePrice: 320000, images: [{ url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.7, reviewCount: 156, soldCount: 890 },
-        { id: 8, name: 'Dây dắt chó cao cấp chống giật', slug: 'day-dat-cao-cap', basePrice: 200000, salePrice: 160000, images: [{ url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }], category: { name: 'Phụ kiện' }, averageRating: 4.4, reviewCount: 98, soldCount: 567 },
-      ]);
+      console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
     }
@@ -224,28 +296,32 @@ const ProductsPage = () => {
                 {/* Categories */}
                 <div className="bg-white rounded-2xl p-5 shadow-sm">
                   <h3 className="font-bold text-gray-800 mb-4">Danh mục</h3>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="space-y-1">
+                    {/* Tất cả */}
+                    <div 
+                      className={`flex items-center py-2 px-2 rounded-lg cursor-pointer transition-all
+                        ${!filters.category ? 'bg-petshop-orange/10' : 'hover:bg-gray-50'}
+                      `}
+                    >
+                      <span className="w-6 h-6 flex-shrink-0" />
                       <input
                         type="radio"
                         name="category"
                         checked={!filters.category}
                         onChange={() => handleFilterChange('category', '')}
-                        className="w-4 h-4 text-petshop-orange"
+                        className="w-4 h-4 text-petshop-orange flex-shrink-0 mx-2"
                       />
-                      <span className="text-gray-700">Tất cả</span>
-                    </label>
-                    {categories.map((category) => (
-                      <label key={category.id} className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="category"
-                          checked={filters.category === category.slug}
-                          onChange={() => handleFilterChange('category', category.slug)}
-                          className="w-4 h-4 text-petshop-orange"
-                        />
-                        <span className="text-gray-700">{category.name}</span>
-                      </label>
+                      <span 
+                        className={`font-medium ${!filters.category ? 'text-petshop-orange' : 'text-gray-700'}`}
+                        onClick={() => handleFilterChange('category', '')}
+                      >
+                        Tất cả
+                      </span>
+                    </div>
+                    
+                    {/* Danh mục */}
+                    {categories.map(category => (
+                      <CategoryItem key={category.id} category={category} />
                     ))}
                   </div>
                 </div>
@@ -328,6 +404,7 @@ const ProductsPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
+                    className="h-full"
                   >
                     <ProductCard product={product} />
                   </motion.div>

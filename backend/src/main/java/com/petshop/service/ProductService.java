@@ -19,6 +19,7 @@ public interface ProductService {
     
     // Danh sách sản phẩm
     Page<ProductDTO> getAllProducts(Pageable pageable);
+    Page<ProductDTO> getAllProductsAdmin(Pageable pageable); // Lấy tất cả sản phẩm cho Admin (bao gồm inactive)
     Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable);
     Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable);
     

@@ -22,45 +22,8 @@ const AdminBookingsPage = () => {
       const response = await bookingsApi.getAll({ status: activeTab === 'all' ? '' : activeTab, date: selectedDate });
       setBookings(response.data.content || response.data);
     } catch (error) {
-      // Mock data
-      setBookings([
-        {
-          id: 1,
-          bookingCode: 'BK-2024001',
-          customer: { name: 'Nguyễn Văn A', phone: '0901234567' },
-          service: { name: 'Tắm và Vệ sinh', duration: 60 },
-          pet: { name: 'Milu', type: 'DOG', breed: 'Poodle', weight: 5.5 },
-          bookingDate: '2024-01-25',
-          bookingTime: '09:00',
-          status: 'PENDING',
-          totalAmount: 250000,
-          notes: 'Chó nhát người, cần nhẹ nhàng',
-        },
-        {
-          id: 2,
-          bookingCode: 'BK-2024002',
-          customer: { name: 'Trần Thị B', phone: '0901234568' },
-          service: { name: 'Cắt tỉa lông', duration: 90 },
-          pet: { name: 'Bông', type: 'CAT', breed: 'Anh lông ngắn', weight: 4 },
-          bookingDate: '2024-01-25',
-          bookingTime: '10:30',
-          status: 'CONFIRMED',
-          totalAmount: 350000,
-          notes: '',
-        },
-        {
-          id: 3,
-          bookingCode: 'BK-2024003',
-          customer: { name: 'Lê Văn C', phone: '0901234569' },
-          service: { name: 'Combo Spa VIP', duration: 120 },
-          pet: { name: 'Lucky', type: 'DOG', breed: 'Golden Retriever', weight: 28 },
-          bookingDate: '2024-01-25',
-          bookingTime: '14:00',
-          status: 'IN_PROGRESS',
-          totalAmount: 550000,
-          notes: 'Khách hàng VIP',
-        },
-      ]);
+      console.error('Error fetching bookings:', error);
+      toast.error('Không thể tải danh sách lịch hẹn');
     } finally {
       setLoading(false);
     }

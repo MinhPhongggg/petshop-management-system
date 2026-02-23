@@ -35,26 +35,7 @@ const DashboardPage = () => {
       setRecentOrders(data.recentOrders || []);
       setRecentBookings(data.recentBookings || []);
     } catch (error) {
-      // Mock data
-      setStats({
-        totalProducts: 156,
-        totalOrders: 234,
-        totalBookings: 89,
-        totalUsers: 567,
-        totalRevenue: 125500000,
-        orderGrowth: 12.5,
-        bookingGrowth: 8.3,
-        revenueGrowth: 15.2,
-      });
-      setRecentOrders([
-        { id: 1, orderNumber: 'ORD-001', customer: 'Nguyễn Văn A', amount: 850000, status: 'PENDING', createdAt: '2024-01-20' },
-        { id: 2, orderNumber: 'ORD-002', customer: 'Trần Thị B', amount: 1250000, status: 'SHIPPING', createdAt: '2024-01-20' },
-        { id: 3, orderNumber: 'ORD-003', customer: 'Lê Văn C', amount: 450000, status: 'DELIVERED', createdAt: '2024-01-19' },
-      ]);
-      setRecentBookings([
-        { id: 1, bookingCode: 'BK-001', customer: 'Nguyễn Văn A', service: 'Tắm và Vệ sinh', status: 'CONFIRMED', bookingDate: '2024-01-25' },
-        { id: 2, bookingCode: 'BK-002', customer: 'Phạm Thị D', service: 'Cắt tỉa lông', status: 'PENDING', bookingDate: '2024-01-26' },
-      ]);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }

@@ -83,6 +83,7 @@ com\petshop\service\impl\CategoryServiceImpl.class
 com\petshop\service\InventoryService.class
 com\petshop\dto\request\SpaServiceRequest.class
 com\petshop\entity\Booking$BookingStatus.class
+com\petshop\service\impl\ProductImportServiceImpl$1.class
 com\petshop\controller\ProductController.class
 com\petshop\repository\SpaServiceRepository.class
 com\petshop\dto\request\RegisterRequest.class

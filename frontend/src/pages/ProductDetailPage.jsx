@@ -42,56 +42,7 @@ const ProductDetailPage = () => {
         setRelatedProducts(relatedRes.data.content?.filter(p => p.id !== response.data.id) || []);
       }
     } catch (error) {
-      // Mock data
-      setProduct({
-        id: 1,
-        name: 'Thức ăn hạt Royal Canin cho chó trưởng thành',
-        slug: 'thuc-an-royal-canin',
-        description: `<p>Thức ăn hạt Royal Canin được sản xuất tại Pháp, cung cấp đầy đủ dưỡng chất cho chó trưởng thành.</p>
-        <h3>Thành phần dinh dưỡng:</h3>
-        <ul>
-          <li>Protein: 25%</li>
-          <li>Chất béo: 14%</li>
-          <li>Chất xơ: 2.9%</li>
-          <li>Độ ẩm: 10%</li>
-        </ul>
-        <h3>Công dụng:</h3>
-        <ul>
-          <li>Cung cấp năng lượng cho hoạt động hàng ngày</li>
-          <li>Hỗ trợ hệ tiêu hóa khỏe mạnh</li>
-          <li>Tăng cường hệ miễn dịch</li>
-          <li>Giúp lông bóng mượt</li>
-        </ul>`,
-        shortDescription: 'Thức ăn hạt cao cấp cho chó trưởng thành, giàu dinh dưỡng, được nhập khẩu từ Pháp.',
-        basePrice: 450000,
-        salePrice: 380000,
-        images: [
-          { id: 1, url: 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=800' },
-          { id: 2, url: 'https://images.unsplash.com/photo-1568640347023-a616a30bc3bd?w=800' },
-          { id: 3, url: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800' },
-        ],
-        category: { id: 1, name: 'Thức ăn', slug: 'thuc-an' },
-        brand: { id: 1, name: 'Royal Canin' },
-        variants: [
-          { id: 1, name: '2kg', price: 380000, stock: 50 },
-          { id: 2, name: '5kg', price: 850000, stock: 30 },
-          { id: 3, name: '10kg', price: 1500000, stock: 20 },
-        ],
-        averageRating: 4.5,
-        reviewCount: 128,
-        soldCount: 1500,
-        featured: true,
-        reviews: [
-          { id: 1, user: { fullName: 'Nguyễn Văn A' }, rating: 5, comment: 'Sản phẩm rất tốt, chó nhà mình rất thích!', createdAt: '2024-01-15' },
-          { id: 2, user: { fullName: 'Trần Thị B' }, rating: 4, comment: 'Giao hàng nhanh, đóng gói cẩn thận.', createdAt: '2024-01-10' },
-        ],
-      });
-      setSelectedVariant({ id: 1, name: '2kg', price: 380000, stock: 50 });
-      setRelatedProducts([
-        { id: 2, name: 'Thức ăn hữu cơ cho mèo', slug: 'thuc-an-huu-co-meo', basePrice: 320000, images: [{ url: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.7, reviewCount: 156, soldCount: 890 },
-        { id: 3, name: 'Pate cho chó Pedigree', slug: 'pate-pedigree', basePrice: 45000, images: [{ url: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.3, reviewCount: 234 },
-        { id: 4, name: 'Snack thưởng cho chó', slug: 'snack-thuong-cho', basePrice: 85000, images: [{ url: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400' }], category: { name: 'Thức ăn' }, averageRating: 4.5, reviewCount: 189 },
-      ]);
+      console.error('Error fetching product:', error);
     } finally {
       setLoading(false);
     }
@@ -169,7 +120,7 @@ const ProductDetailPage = () => {
                   <SwiperSlide key={image.id || index}>
                     <div className="swiper-zoom-container">
                       <img
-                        src={image.url}
+                        src={image.imageUrl}
                         alt={`${product.name} - ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
@@ -189,7 +140,7 @@ const ProductDetailPage = () => {
                 {product.images?.map((image, index) => (
                   <SwiperSlide key={image.id || index}>
                     <img
-                      src={image.url}
+                      src={image.imageUrl}
                       alt={`Thumb ${index + 1}`}
                       className="w-full h-full object-cover rounded-xl cursor-pointer border-2 border-transparent hover:border-petshop-orange transition-colors"
                     />
@@ -430,7 +381,9 @@ const ProductDetailPage = () => {
             <h2 className="section-title mb-8">Sản phẩm liên quan</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {relatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <div key={product.id} className="h-full">
+                  <ProductCard product={product} />
+                </div>
               ))}
             </div>
           </section>

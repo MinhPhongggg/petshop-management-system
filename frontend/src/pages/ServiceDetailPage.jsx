@@ -19,43 +19,7 @@ const ServiceDetailPage = () => {
       const response = await servicesApi.getBySlug(slug);
       setService(response.data);
     } catch (error) {
-      // Mock data
-      setService({
-        id: 1,
-        name: 'Tắm Spa toàn thân',
-        slug: 'tam-spa-toan-than',
-        description: `
-          <h3>Mô tả dịch vụ</h3>
-          <p>Dịch vụ tắm spa chuyên nghiệp với các sản phẩm cao cấp, giúp thú cưng thư giãn và sạch sẽ.</p>
-          
-          <h3>Quy trình thực hiện</h3>
-          <ol>
-            <li>Kiểm tra sức khỏe tổng quát</li>
-            <li>Chải lông, gỡ rối</li>
-            <li>Tắm với sữa tắm chuyên dụng</li>
-            <li>Massage nhẹ nhàng</li>
-            <li>Xả sạch và sấy khô</li>
-            <li>Xịt thơm và chải mượt</li>
-          </ol>
-          
-          <h3>Lợi ích</h3>
-          <ul>
-            <li>Loại bỏ bụi bẩn, vi khuẩn</li>
-            <li>Giúp lông bóng mượt</li>
-            <li>Thư giãn cơ bắp</li>
-            <li>Giảm stress cho thú cưng</li>
-          </ul>
-        `,
-        imageUrl: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800',
-        duration: 60,
-        petType: 'ALL',
-        pricingList: [
-          { minWeight: 0, maxWeight: 5, price: 150000 },
-          { minWeight: 5, maxWeight: 10, price: 200000 },
-          { minWeight: 10, maxWeight: 20, price: 280000 },
-          { minWeight: 20, maxWeight: 50, price: 350000 },
-        ],
-      });
+      console.error('Error fetching service:', error);
     } finally {
       setLoading(false);
     }

@@ -50,6 +50,7 @@ export const authApi = {
 // Products API
 export const productsApi = {
   getAll: (params) => api.get('/products', { params }),
+  getAllAdmin: (params) => api.get('/products/admin/all', { params }), // Admin - lấy tất cả sản phẩm
   getById: (id) => api.get(`/products/${id}`),
   getBySlug: (slug) => api.get(`/products/slug/${slug}`),
   search: (keyword, params) => api.get('/products/search', { params: { keyword, ...params } }),
@@ -161,4 +162,25 @@ export const reviewsApi = {
 export const dashboardApi = {
   getDashboard: () => api.get('/dashboard'),
   getDashboardByRange: (startDate, endDate) => api.get('/dashboard/range', { params: { startDate, endDate } }),
+};
+
+// Users API (Admin)
+export const usersApi = {
+  getAll: (params) => api.get('/users', { params }),
+  getById: (id) => api.get(`/users/${id}`),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  updateStatus: (id, status) => api.put(`/users/${id}/status`, null, { params: { status } }),
+  delete: (id) => api.delete(`/users/${id}`),
+};
+
+// Import API (Admin)
+export const importApi = {
+  importProducts: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/import/products', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  downloadProductTemplate: () => api.get('/import/products/template', { responseType: 'blob' }),
 };
