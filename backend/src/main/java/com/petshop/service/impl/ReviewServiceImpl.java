@@ -107,6 +107,12 @@ public class ReviewServiceImpl implements ReviewService {
     }
     
     @Override
+    public Page<ReviewDTO> getAllReviews(Pageable pageable) {
+        return reviewRepository.findAll(pageable)
+            .map(this::mapToDTO);
+    }
+    
+    @Override
     @Transactional
     public ReviewDTO replyToReview(Long id, String reply) {
         Review review = reviewRepository.findById(id)

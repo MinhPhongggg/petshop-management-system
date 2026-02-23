@@ -28,6 +28,7 @@ import ProfilePage from './pages/user/ProfilePage';
 import MyOrdersPage from './pages/user/MyOrdersPage';
 import MyBookingsPage from './pages/user/MyBookingsPage';
 import MyPetsPage from './pages/user/MyPetsPage';
+import MyReviewsPage from './pages/user/MyReviewsPage';
 
 // Admin Pages
 import DashboardPage from './pages/admin/DashboardPage';
@@ -38,6 +39,7 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminBookingsPage from './pages/admin/AdminBookingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminReviewsPage from './pages/admin/AdminReviewsPage';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -96,6 +98,7 @@ function App() {
             <Route path="my-orders" element={<MyOrdersPage />} />
             <Route path="my-bookings" element={<MyBookingsPage />} />
             <Route path="my-pets" element={<MyPetsPage />} />
+            <Route path="my-reviews" element={<MyReviewsPage />} />
           </Route>
         </Route>
 
@@ -110,6 +113,7 @@ function App() {
           <Route path="bookings" element={<AdminBookingsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="services" element={<AdminServicesPage />} />
+          <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>
       </Routes>
     </Router>

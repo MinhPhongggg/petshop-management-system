@@ -16,6 +16,9 @@ public interface ReviewService {
     // Lấy đánh giá của user
     Page<ReviewDTO> getMyReviews(Pageable pageable);
     
+    // Lấy tất cả đánh giá (admin)
+    Page<ReviewDTO> getAllReviews(Pageable pageable);
+    
     // Phản hồi đánh giá (admin)
     ReviewDTO replyToReview(Long id, String reply);
     
