@@ -171,3 +171,15 @@ export const usersApi = {
   updateStatus: (id, status) => api.put(`/users/${id}/status`, null, { params: { status } }),
   delete: (id) => api.delete(`/users/${id}`),
 };
+
+// Import API (Admin)
+export const importApi = {
+  importProducts: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/import/products', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  downloadProductTemplate: () => api.get('/import/products/template', { responseType: 'blob' }),
+};

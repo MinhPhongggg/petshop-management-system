@@ -30,4 +30,10 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     // Lấy tất cả danh mục active có sắp xếp
     @Query("SELECT c FROM Category c WHERE c.active = true ORDER BY c.parent.id NULLS FIRST, c.displayOrder")
     List<Category> findAllActiveOrdered();
+    
+    // Tìm danh mục theo tên
+    Optional<Category> findByNameIgnoreCase(String name);
+    
+    // Tìm tất cả danh mục theo tên (để xử lý trùng tên)
+    List<Category> findAllByNameIgnoreCase(String name);
 }

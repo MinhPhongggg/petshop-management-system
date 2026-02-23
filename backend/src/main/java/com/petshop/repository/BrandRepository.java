@@ -17,4 +17,7 @@ public interface BrandRepository extends JpaRepository<Brand, Long> {
     boolean existsByName(String name);
     
     boolean existsBySlug(String slug);
+    
+    // Tìm thương hiệu theo tên
+    Optional<Brand> findByNameIgnoreCase(String name);
 }

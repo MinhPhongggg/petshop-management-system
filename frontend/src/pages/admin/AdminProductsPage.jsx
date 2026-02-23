@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiFilter, FiEye } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiFilter, FiEye, FiUpload, FiDownload, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { productsApi, categoriesApi } from '../../services/api';
+import { productsApi, categoriesApi, importApi } from '../../services/api';
 
 const AdminProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -13,6 +13,13 @@ const AdminProductsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  
+  // Import states
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchData();
@@ -22,7 +29,7 @@ const AdminProductsPage = () => {
     try {
       const [productsRes, categoriesRes] = await Promise.all([
         productsApi.getAll({ page: currentPage - 1, size: 10, categoryId: categoryFilter }),
-        categoriesApi.getAll(),
+        categoriesApi.getTree(),
       ]);
       setProducts(productsRes.data.content || productsRes.data);
       setTotalPages(productsRes.data.totalPages || 1);
@@ -34,6 +41,23 @@ const AdminProductsPage = () => {
       setLoading(false);
     }
   };
+
+  // Flatten categories for dropdown with indentation
+  const flattenCategories = (cats, level = 0) => {
+    let result = [];
+    cats.forEach(cat => {
+      result.push({
+        ...cat,
+        displayName: level > 0 ? `${'\u00A0\u00A0'.repeat(level)}\u2514 ${cat.name}` : cat.name
+      });
+      if (cat.children && cat.children.length > 0) {
+        result = [...result, ...flattenCategories(cat.children, level + 1)];
+      }
+    });
+    return result;
+  };
+
+  const flattenedCategories = flattenCategories(categories);
 
   const handleDelete = async (productId) => {
     if (window.confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
@@ -68,6 +92,72 @@ const AdminProductsPage = () => {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Import handlers
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await importApi.downloadProductTemplate();
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'product_import_template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Đã tải file mẫu');
+    } catch (error) {
+      toast.error('Không thể tải file mẫu');
+    }
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+      if (!validTypes.includes(file.type) && !file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
+        toast.error('Vui lòng chọn file Excel (.xlsx hoặc .xls)');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File không được vượt quá 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setImportResult(null);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) {
+      toast.error('Vui lòng chọn file để import');
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const response = await importApi.importProducts(selectedFile);
+      setImportResult(response.data);
+      if (response.data.successCount > 0) {
+        toast.success(`Đã import ${response.data.successCount} sản phẩm`);
+        fetchData();
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể import sản phẩm');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const closeImportModal = () => {
+    setShowImportModal(false);
+    setSelectedFile(null);
+    setImportResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -80,9 +170,17 @@ const AdminProductsPage = () => {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Quản lý sản phẩm</h1>
-        <Link to="/admin/products/new" className="btn-primary flex items-center gap-2">
-          <FiPlus /> Thêm sản phẩm
-        </Link>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="px-4 py-2 border border-petshop-green text-petshop-green rounded-lg hover:bg-petshop-green/5 flex items-center gap-2"
+          >
+            <FiUpload /> Import Excel
+          </button>
+          <Link to="/admin/products/new" className="btn-primary flex items-center gap-2">
+            <FiPlus /> Thêm sản phẩm
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
@@ -106,8 +204,8 @@ const AdminProductsPage = () => {
             className="input-field w-auto"
           >
             <option value="">Tất cả danh mục</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            {flattenedCategories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.displayName}</option>
             ))}
           </select>
         </div>
@@ -212,6 +310,142 @@ const AdminProductsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Import Modal */}
+      <AnimatePresence>
+        {showImportModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={closeImportModal}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-auto"
+            >
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-800">Import sản phẩm từ Excel</h2>
+                  <button
+                    onClick={closeImportModal}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                  >
+                    <FiX size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Download Template */}
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <h3 className="font-medium text-blue-800 mb-2">Bước 1: Tải file mẫu</h3>
+                  <p className="text-sm text-blue-600 mb-3">
+                    Tải file Excel mẫu, điền thông tin sản phẩm theo hướng dẫn trong file
+                  </p>
+                  <button
+                    onClick={handleDownloadTemplate}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    <FiDownload /> Tải file mẫu
+                  </button>
+                </div>
+
+                {/* Upload File */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="font-medium text-gray-800 mb-2">Bước 2: Chọn file để import</h3>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    id="import-file"
+                  />
+                  <label
+                    htmlFor="import-file"
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:border-petshop-green hover:bg-green-50/50 transition-colors"
+                  >
+                    <FiUpload className="w-8 h-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-600">
+                      {selectedFile ? selectedFile.name : 'Kéo thả hoặc click để chọn file'}
+                    </span>
+                    <span className="text-xs text-gray-400 mt-1">
+                      Hỗ trợ .xlsx, .xls (tối đa 10MB)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Import Button */}
+                <button
+                  onClick={handleImport}
+                  disabled={!selectedFile || importing}
+                  className="w-full btn-primary flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {importing ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Đang import...
+                    </>
+                  ) : (
+                    <>
+                      <FiUpload /> Import sản phẩm
+                    </>
+                  )}
+                </button>
+
+                {/* Import Result */}
+                {importResult && (
+                  <div className="border rounded-xl overflow-hidden">
+                    <div className={`p-4 ${importResult.errorCount > 0 ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                      <div className="flex items-center gap-2">
+                        {importResult.errorCount > 0 ? (
+                          <FiAlertCircle className="text-yellow-500" />
+                        ) : (
+                          <FiCheckCircle className="text-green-500" />
+                        )}
+                        <span className="font-medium">{importResult.message}</span>
+                      </div>
+                    </div>
+                    
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="p-4 max-h-48 overflow-auto">
+                        <h4 className="font-medium text-red-600 mb-2">Chi tiết lỗi:</h4>
+                        <div className="space-y-2">
+                          {importResult.errors.map((err, idx) => (
+                            <div key={idx} className="text-sm p-2 bg-red-50 rounded">
+                              <span className="font-medium">Dòng {err.rowNumber}</span>
+                              {err.productName && <span> - {err.productName}</span>}
+                              : <span className="text-red-600">{err.errorMessage}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {importResult.createdProducts && importResult.createdProducts.length > 0 && (
+                      <div className="p-4 border-t max-h-32 overflow-auto">
+                        <h4 className="font-medium text-green-600 mb-2">Sản phẩm đã tạo:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {importResult.createdProducts.map((name, idx) => (
+                            <span key={idx} className="text-sm px-2 py-1 bg-green-100 text-green-700 rounded">
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
