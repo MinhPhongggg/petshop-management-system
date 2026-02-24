@@ -3,6 +3,7 @@ package com.petshop.service.impl;
 import com.petshop.dto.request.SpaServiceRequest;
 import com.petshop.dto.response.ServicePricingDTO;
 import com.petshop.dto.response.SpaServiceDTO;
+import com.petshop.entity.Category;
 import com.petshop.entity.ServicePricing;
 import com.petshop.entity.SpaService;
 import com.petshop.exception.BadRequestException;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,19 +27,44 @@ public class SpaServiceServiceImpl implements SpaServiceService {
     private final SpaServiceRepository spaServiceRepository;
     private final ServicePricingRepository servicePricingRepository;
     
+    private String generateSlug(String name) {
+        String slug = name.toLowerCase()
+            .replaceAll("[àáạảãâầấậẩẫăằắặẳẵ]", "a")
+            .replaceAll("[èéẹẻẽêềếệểễ]", "e")
+            .replaceAll("[ìíịỉĩ]", "i")
+            .replaceAll("[òóọỏõôồốộổỗơờớợởỡ]", "o")
+            .replaceAll("[ùúụủũưừứựửữ]", "u")
+            .replaceAll("[ỳýỵỷỹ]", "y")
+            .replaceAll("[đ]", "d")
+            .replaceAll("[^a-z0-9\\s-]", "")
+            .replaceAll("[\\s]+", "-")
+            .replaceAll("-+", "-")
+            .replaceAll("^-|-$", "");
+        return slug;
+    }
+    
     @Override
     @Transactional
     public SpaServiceDTO createService(SpaServiceRequest request) {
-        if (spaServiceRepository.existsBySlug(request.getSlug())) {
-            throw new BadRequestException("Slug đã tồn tại");
+        // Auto-generate slug from name if not provided
+        String slug = (request.getSlug() != null && !request.getSlug().isBlank()) 
+            ? request.getSlug() 
+            : generateSlug(request.getName());
+        
+        // Ensure unique slug
+        String baseSlug = slug;
+        int counter = 1;
+        while (spaServiceRepository.existsBySlug(slug)) {
+            slug = baseSlug + "-" + counter++;
         }
         
         SpaService service = SpaService.builder()
             .name(request.getName())
-            .slug(request.getSlug())
+            .slug(slug)
             .description(request.getDescription())
             .imageUrl(request.getImage())
             .duration(request.getDuration())
+            .petType(request.getPetType() != null ? request.getPetType() : Category.PetType.ALL)
             .active(true)
             .build();
         
@@ -68,16 +95,27 @@ public class SpaServiceServiceImpl implements SpaServiceService {
         SpaService service = spaServiceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
         
-        if (!service.getSlug().equals(request.getSlug()) && 
-            spaServiceRepository.existsBySlug(request.getSlug())) {
+        // Auto-generate slug from name if not provided
+        String slug = (request.getSlug() != null && !request.getSlug().isBlank()) 
+            ? request.getSlug() 
+            : generateSlug(request.getName());
+        
+        if (!service.getSlug().equals(slug) && 
+            spaServiceRepository.existsBySlug(slug)) {
             throw new BadRequestException("Slug đã tồn tại");
         }
         
         service.setName(request.getName());
-        service.setSlug(request.getSlug());
+        service.setSlug(slug);
         service.setDescription(request.getDescription());
         service.setImageUrl(request.getImage());
         service.setDuration(request.getDuration());
+        if (request.getPetType() != null) {
+            service.setPetType(request.getPetType());
+        }
+        if (request.getActive() != null) {
+            service.setActive(request.getActive());
+        }
         
         // Update pricings - delete old and add new
         if (request.getPricings() != null) {
@@ -108,9 +146,16 @@ public class SpaServiceServiceImpl implements SpaServiceService {
         SpaService service = spaServiceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
         
-        // Soft delete
-        service.setActive(false);
-        spaServiceRepository.save(service);
+        // Kiểm tra có booking liên quan không
+        if (service.getBookings() != null && !service.getBookings().isEmpty()) {
+            // Có booking -> soft delete để giữ lịch sử
+            service.setActive(false);
+            spaServiceRepository.save(service);
+        } else {
+            // Không có booking -> xóa hoàn toàn
+            servicePricingRepository.deleteAll(service.getPricingList());
+            spaServiceRepository.delete(service);
+        }
     }
     
     @Override
@@ -143,7 +188,10 @@ public class SpaServiceServiceImpl implements SpaServiceService {
     
     private SpaServiceDTO mapToDTO(SpaService service) {
         List<ServicePricingDTO> pricingDTOs = new ArrayList<>();
-        if (service.getPricingList() != null) {
+        BigDecimal minPrice = null;
+        BigDecimal maxPrice = null;
+        
+        if (service.getPricingList() != null && !service.getPricingList().isEmpty()) {
             pricingDTOs = service.getPricingList().stream()
                 .map(p -> ServicePricingDTO.builder()
                     .id(p.getId())
@@ -153,6 +201,15 @@ public class SpaServiceServiceImpl implements SpaServiceService {
                     .price(p.getPrice())
                     .build())
                 .collect(Collectors.toList());
+            
+            minPrice = service.getPricingList().stream()
+                .map(ServicePricing::getPrice)
+                .min(BigDecimal::compareTo)
+                .orElse(null);
+            maxPrice = service.getPricingList().stream()
+                .map(ServicePricing::getPrice)
+                .max(BigDecimal::compareTo)
+                .orElse(null);
         }
         
         return SpaServiceDTO.builder()
@@ -166,6 +223,8 @@ public class SpaServiceServiceImpl implements SpaServiceService {
             .displayOrder(service.getDisplayOrder())
             .active(service.getActive())
             .pricingList(pricingDTOs)
+            .minPrice(minPrice)
+            .maxPrice(maxPrice)
             .createdAt(service.getCreatedAt())
             .build();
     }

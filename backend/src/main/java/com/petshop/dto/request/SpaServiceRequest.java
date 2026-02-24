@@ -1,5 +1,6 @@
 package com.petshop.dto.request;
 
+import com.petshop.entity.Category;
 import com.petshop.entity.Pet;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,7 +15,6 @@ public class SpaServiceRequest {
     @NotBlank(message = "Tên dịch vụ là bắt buộc")
     private String name;
     
-    @NotBlank(message = "Slug là bắt buộc")
     private String slug;
     
     private String description;
@@ -23,6 +23,10 @@ public class SpaServiceRequest {
     
     @NotNull(message = "Thời lượng là bắt buộc")
     private Integer duration;
+    
+    private Category.PetType petType;
+    
+    private Boolean active;
     
     // Bảng giá theo cân nặng
     private List<PricingRequest> pricings;
