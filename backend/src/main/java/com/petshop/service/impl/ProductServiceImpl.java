@@ -9,6 +9,7 @@ import com.petshop.exception.BadRequestException;
 import com.petshop.exception.ResourceNotFoundException;
 import com.petshop.repository.*;
 import com.petshop.service.ProductService;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,7 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final EntityManager entityManager;
     
     @Override
     @Transactional
@@ -128,42 +130,47 @@ public class ProductServiceImpl implements ProductService {
         product.setSalePrice(request.getSalePrice());
         product.setFeatured(request.isFeatured());
         
-        // Cập nhật images - xóa cũ và thêm mới
+        // Cập nhật images - clear và add vào collection gốc (orphanRemoval sẽ tự xóa)
         if (request.getImages() != null) {
-            productImageRepository.deleteAll(product.getImages());
             product.getImages().clear();
-            
+        }
+        
+        // Cập nhật variants - clear và add vào collection gốc (orphanRemoval sẽ tự xóa)
+        if (request.getVariants() != null) {
+            product.getVariants().clear();
+        }
+        
+        // Flush để đảm bảo xóa variants/images cũ trước khi thêm mới (tránh lỗi duplicate SKU)
+        productRepository.saveAndFlush(product);
+        
+        // Thêm images mới
+        if (request.getImages() != null) {
             Product finalProduct = product;
-            List<ProductImage> newImages = request.getImages().stream()
-                .map(imgReq -> ProductImage.builder()
+            request.getImages().forEach(imgReq -> {
+                ProductImage newImage = ProductImage.builder()
                     .product(finalProduct)
                     .imageUrl(imgReq.getImageUrl())
                     .isPrimary(imgReq.isPrimary())
                     .sortOrder(imgReq.getSortOrder())
-                    .build())
-                .collect(Collectors.toList());
-            productImageRepository.saveAll(newImages);
-            product.setImages(newImages);
+                    .build();
+                finalProduct.getImages().add(newImage);
+            });
         }
         
-        // Cập nhật variants - xóa cũ và thêm mới
+        // Thêm variants mới
         if (request.getVariants() != null) {
-            productVariantRepository.deleteAll(product.getVariants());
-            product.getVariants().clear();
-            
             Product finalProduct2 = product;
-            List<ProductVariant> newVariants = request.getVariants().stream()
-                .map(varReq -> ProductVariant.builder()
+            request.getVariants().forEach(varReq -> {
+                ProductVariant newVariant = ProductVariant.builder()
                     .product(finalProduct2)
                     .name(varReq.getName())
                     .sku(varReq.getSku())
                     .price(varReq.getPrice())
                     .stock(varReq.getStock())
                     .active(true)
-                    .build())
-                .collect(Collectors.toList());
-            productVariantRepository.saveAll(newVariants);
-            product.setVariants(newVariants);
+                    .build();
+                finalProduct2.getVariants().add(newVariant);
+            });
         }
         
         product = productRepository.save(product);
