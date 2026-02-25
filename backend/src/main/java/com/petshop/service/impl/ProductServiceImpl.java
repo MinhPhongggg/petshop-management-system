@@ -130,40 +130,37 @@ public class ProductServiceImpl implements ProductService {
         
         // Cập nhật images - xóa cũ và thêm mới
         if (request.getImages() != null) {
-            productImageRepository.deleteAll(product.getImages());
             product.getImages().clear();
+            // Ensure orphanRemoval deletes are executed before inserting new rows
+            productRepository.flush();
             
-            Product finalProduct = product;
-            List<ProductImage> newImages = request.getImages().stream()
-                .map(imgReq -> ProductImage.builder()
-                    .product(finalProduct)
+            for (var imgReq : request.getImages()) {
+                product.getImages().add(ProductImage.builder()
+                    .product(product)
                     .imageUrl(imgReq.getImageUrl())
                     .isPrimary(imgReq.isPrimary())
                     .sortOrder(imgReq.getSortOrder())
-                    .build())
-                .collect(Collectors.toList());
-            productImageRepository.saveAll(newImages);
-            product.setImages(newImages);
+                    .build());
+            }
         }
         
         // Cập nhật variants - xóa cũ và thêm mới
         if (request.getVariants() != null) {
-            productVariantRepository.deleteAll(product.getVariants());
             product.getVariants().clear();
+            // Ensure orphanRemoval deletes are executed before inserting new rows
+            // (important when a SKU is re-used on the new variants)
+            productRepository.flush();
             
-            Product finalProduct2 = product;
-            List<ProductVariant> newVariants = request.getVariants().stream()
-                .map(varReq -> ProductVariant.builder()
-                    .product(finalProduct2)
+            for (var varReq : request.getVariants()) {
+                product.getVariants().add(ProductVariant.builder()
+                    .product(product)
                     .name(varReq.getName())
                     .sku(varReq.getSku())
                     .price(varReq.getPrice())
                     .stock(varReq.getStock())
                     .active(true)
-                    .build())
-                .collect(Collectors.toList());
-            productVariantRepository.saveAll(newVariants);
-            product.setVariants(newVariants);
+                    .build());
+            }
         }
         
         product = productRepository.save(product);

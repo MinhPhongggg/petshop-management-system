@@ -1,13 +1,13 @@
 spring:
   application:
     name: petshop-backend
-  
+
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3306/petshop_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: your_password
     driver-class-name: com.mysql.cj.jdbc.Driver
-  
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,7 +15,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -24,12 +24,11 @@ spring:
 server:
   port: 8080
 
-# JWT Configuration
 jwt:
-  secret: ${JWT_SECRET}
-  expiration: 86400000 # 24 hours in milliseconds
+  # Example only. Use a strong secret via environment variable in real deployments.
+  secret: CHANGE_ME_USE_STRONG_RANDOM_SECRET
+  expiration: 86400000
 
-# Swagger/OpenAPI
 springdoc:
   api-docs:
     path: /api-docs
@@ -37,19 +36,16 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-# Logging
 logging:
   level:
     com.petshop: DEBUG
     org.springframework.security: DEBUG
 
-# Pet Shop Specific Configuration
 petshop:
   points:
-    earn-rate: 1000   # 1000 VND = 1 điểm
-    redeem-value: 100 # 1 điểm = 100 VND
-  
+    earn-rate: 1000
+    redeem-value: 100
   appointment:
-    slot-duration: 30  # minutes
-    advance-booking-days: 30  # Đặt trước tối đa 30 ngày
-    min-booking-hours: 2  # Đặt trước ít nhất 2 giờ
+    slot-duration: 30
+    advance-booking-days: 30
+    min-booking-hours: 2

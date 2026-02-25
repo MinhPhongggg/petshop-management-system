@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiTrash2, FiMinus, FiPlus, FiArrowRight, FiShoppingBag } from 'react-icons/fi';
@@ -7,8 +7,37 @@ import { useAuthStore } from '../store/authStore';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { items, updateQuantityLocal, removeItemLocal, clearCartLocal, getTotalPrice, getItemCount } = useCartStore();
+  const {
+    items,
+    isLoading,
+    fetchCart,
+    updateQuantity,
+    updateQuantityLocal,
+    removeItem,
+    removeItemLocal,
+    clearCart,
+    clearCartLocal,
+    getTotalPrice,
+    getItemCount,
+  } = useCartStore();
   const { isAuthenticated } = useAuthStore();
+
+  const [quantityDraft, setQuantityDraft] = useState({});
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCart();
+    }
+  }, [isAuthenticated, fetchCart]);
+
+  useEffect(() => {
+    // Keep draft quantities in sync with cart
+    const draft = {};
+    for (const item of items) {
+      draft[item.id] = item.quantity;
+    }
+    setQuantityDraft(draft);
+  }, [items]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -24,6 +53,68 @@ const CartPage = () => {
       navigate('/checkout');
     }
   };
+
+  const getItemInfo = (item) => {
+    const slug = item.productSlug || item.product?.slug;
+    const name = item.productName || item.product?.name;
+    const image =
+      item.productImage ||
+      item.product?.images?.[0]?.url ||
+      'https://via.placeholder.com/120';
+
+    const variantName = item.variantName || item.variant?.name;
+    const unitPrice =
+      item.currentPrice ||
+      item.price ||
+      item.variant?.price ||
+      item.product?.salePrice ||
+      item.product?.basePrice ||
+      0;
+    const lineTotal = (item.subtotal ?? unitPrice * item.quantity) || 0;
+    return { slug, name, image, variantName, unitPrice, lineTotal };
+  };
+
+  const handleUpdateQuantity = async (itemId, nextQuantity) => {
+    const safeQuantity = Number.isFinite(nextQuantity) ? Math.floor(nextQuantity) : 1;
+    if (safeQuantity < 1) return;
+    if (isAuthenticated) {
+      await updateQuantity(itemId, safeQuantity);
+      await fetchCart();
+    } else {
+      updateQuantityLocal(itemId, safeQuantity);
+    }
+  };
+
+  const handleRemoveItem = async (itemId) => {
+    if (isAuthenticated) {
+      await removeItem(itemId);
+      await fetchCart();
+    } else {
+      removeItemLocal(itemId);
+    }
+  };
+
+  const handleClearCart = async () => {
+    if (!window.confirm('Bạn có chắc muốn xóa tất cả sản phẩm?')) return;
+    if (isAuthenticated) {
+      await clearCart();
+      await fetchCart();
+    } else {
+      clearCartLocal();
+    }
+  };
+
+  if (isAuthenticated && isLoading) {
+    return (
+      <div className="min-h-screen bg-petshop-cream py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-petshop-orange border-t-transparent"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -66,6 +157,10 @@ const CartPage = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item, index) => (
+              (() => {
+                const info = getItemInfo(item);
+                const productLink = info.slug ? `/products/${info.slug}` : '/products';
+                return (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -75,10 +170,10 @@ const CartPage = () => {
               >
                 <div className="flex gap-4">
                   {/* Image */}
-                  <Link to={`/products/${item.product?.slug}`} className="flex-shrink-0">
+                  <Link to={productLink} className="flex-shrink-0">
                     <img
-                      src={item.product?.images?.[0]?.url || 'https://via.placeholder.com/120'}
-                      alt={item.product?.name}
+                      src={info.image}
+                      alt={info.name}
                       className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-xl"
                     />
                   </Link>
@@ -86,21 +181,21 @@ const CartPage = () => {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <Link
-                      to={`/products/${item.product?.slug}`}
+                      to={productLink}
                       className="font-semibold text-gray-800 hover:text-petshop-orange transition-colors line-clamp-2"
                     >
-                      {item.product?.name}
+                      {info.name}
                     </Link>
                     
-                    {item.variant && (
+                    {info.variantName && (
                       <p className="text-sm text-gray-500 mt-1">
-                        Phân loại: {item.variant.name}
+                        Phân loại: {info.variantName}
                       </p>
                     )}
 
                     <div className="mt-2">
                       <span className="text-lg font-bold text-petshop-orange">
-                        {formatPrice(item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice)}
+                        {formatPrice(info.unitPrice)}
                       </span>
                     </div>
 
@@ -108,22 +203,40 @@ const CartPage = () => {
                     <div className="flex items-center justify-between mt-4 md:hidden">
                       <div className="flex items-center border rounded-lg">
                         <button
-                          onClick={() => updateQuantityLocal(item.id, item.quantity - 1)}
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           className="p-2 hover:bg-gray-100 disabled:opacity-50"
                         >
                           <FiMinus className="w-4 h-4" />
                         </button>
-                        <span className="px-4 font-medium">{item.quantity}</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={quantityDraft[item.id] ?? item.quantity}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            const next = v === '' ? '' : Number(v);
+                            setQuantityDraft((prev) => ({ ...prev, [item.id]: next }));
+                            if (next !== '' && Number.isFinite(next) && next >= 1) {
+                              handleUpdateQuantity(item.id, next);
+                            }
+                          }}
+                          onBlur={() => {
+                            const draft = quantityDraft[item.id];
+                            const next = draft === '' ? item.quantity : Number(draft);
+                            handleUpdateQuantity(item.id, next);
+                          }}
+                          className="w-16 text-center font-medium outline-none"
+                        />
                         <button
-                          onClick={() => updateQuantityLocal(item.id, item.quantity + 1)}
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                           className="p-2 hover:bg-gray-100"
                         >
                           <FiPlus className="w-4 h-4" />
                         </button>
                       </div>
                       <button
-                        onClick={() => removeItemLocal(item.id)}
+                        onClick={() => handleRemoveItem(item.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                       >
                         <FiTrash2 className="w-5 h-5" />
@@ -135,15 +248,33 @@ const CartPage = () => {
                   <div className="hidden md:flex items-center gap-6">
                     <div className="flex items-center border rounded-lg">
                       <button
-                        onClick={() => updateQuantityLocal(item.id, item.quantity - 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                         disabled={item.quantity <= 1}
                         className="p-2 hover:bg-gray-100 disabled:opacity-50"
                       >
                         <FiMinus className="w-4 h-4" />
                       </button>
-                      <span className="px-4 font-medium">{item.quantity}</span>
+                      <input
+                        type="number"
+                        min={1}
+                        value={quantityDraft[item.id] ?? item.quantity}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          const next = v === '' ? '' : Number(v);
+                          setQuantityDraft((prev) => ({ ...prev, [item.id]: next }));
+                          if (next !== '' && Number.isFinite(next) && next >= 1) {
+                            handleUpdateQuantity(item.id, next);
+                          }
+                        }}
+                        onBlur={() => {
+                          const draft = quantityDraft[item.id];
+                          const next = draft === '' ? item.quantity : Number(draft);
+                          handleUpdateQuantity(item.id, next);
+                        }}
+                        className="w-16 text-center font-medium outline-none"
+                      />
                       <button
-                        onClick={() => updateQuantityLocal(item.id, item.quantity + 1)}
+                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                         className="p-2 hover:bg-gray-100"
                       >
                         <FiPlus className="w-4 h-4" />
@@ -152,12 +283,12 @@ const CartPage = () => {
 
                     <div className="text-right min-w-[120px]">
                       <p className="text-lg font-bold text-petshop-orange">
-                        {formatPrice((item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice) * item.quantity)}
+                        {formatPrice(info.lineTotal)}
                       </p>
                     </div>
 
                     <button
-                      onClick={() => removeItemLocal(item.id)}
+                      onClick={() => handleRemoveItem(item.id)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <FiTrash2 className="w-5 h-5" />
@@ -165,15 +296,13 @@ const CartPage = () => {
                   </div>
                 </div>
               </motion.div>
+                );
+              })()
             ))}
 
             {/* Clear Cart */}
             <button
-              onClick={() => {
-                if (window.confirm('Bạn có chắc muốn xóa tất cả sản phẩm?')) {
-                  clearCartLocal();
-                }
-              }}
+              onClick={handleClearCart}
               className="text-red-500 hover:text-red-600 text-sm font-medium"
             >
               Xóa tất cả giỏ hàng
@@ -198,20 +327,6 @@ const CartPage = () => {
                 <div className="flex justify-between text-lg font-bold">
                   <span>Tổng cộng</span>
                   <span className="text-petshop-orange">{formatPrice(getTotalPrice())}</span>
-                </div>
-              </div>
-
-              {/* Voucher */}
-              <div className="mb-6">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Nhập mã giảm giá"
-                    className="input-field flex-1"
-                  />
-                  <button className="btn-outline px-4">
-                    Áp dụng
-                  </button>
                 </div>
               </div>
 

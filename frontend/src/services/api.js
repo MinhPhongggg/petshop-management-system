@@ -14,7 +14,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
-    if (token) {
+    const requestUrl = config.url || '';
+    const isAuthEndpoint = requestUrl.startsWith('/auth/');
+
+    if (token && !isAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -29,9 +32,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
+      const requestUrl = error.config?.url || '';
+      const isAuthEndpoint = requestUrl.startsWith('/auth/login') || requestUrl.startsWith('/auth/register');
+
+      // Token expired or invalid (avoid redirect loops on login/register)
+      if (!isAuthEndpoint) {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -111,7 +119,8 @@ export const bookingsApi = {
 // Cart API
 export const cartApi = {
   get: () => api.get('/cart'),
-  add: (data) => api.post('/cart', data),
+  // Backend expects { variantId, quantity }
+  add: ({ variantId, quantity }) => api.post('/cart', { variantId, quantity }),
   update: (itemId, quantity) => api.put(`/cart/${itemId}`, null, { params: { quantity } }),
   remove: (itemId) => api.delete(`/cart/${itemId}`),
   clear: () => api.delete('/cart'),
