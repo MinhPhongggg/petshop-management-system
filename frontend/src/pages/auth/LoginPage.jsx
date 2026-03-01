@@ -34,7 +34,7 @@ const LoginPage = () => {
 
     // BE expects username field, use email as username
     const result = await login({
-      username: formData.email,
+      username: formData.email.trim(),
       password: formData.password,
     });
     

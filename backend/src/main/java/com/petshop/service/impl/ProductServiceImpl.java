@@ -145,32 +145,28 @@ public class ProductServiceImpl implements ProductService {
         
         // Thêm images mới
         if (request.getImages() != null) {
-            Product finalProduct = product;
-            request.getImages().forEach(imgReq -> {
-                ProductImage newImage = ProductImage.builder()
-                    .product(finalProduct)
+            for (var imgReq : request.getImages()) {
+                product.getImages().add(ProductImage.builder()
+                    .product(product)
                     .imageUrl(imgReq.getImageUrl())
                     .isPrimary(imgReq.isPrimary())
                     .sortOrder(imgReq.getSortOrder())
-                    .build();
-                finalProduct.getImages().add(newImage);
-            });
+                    .build());
+            }
         }
         
         // Thêm variants mới
         if (request.getVariants() != null) {
-            Product finalProduct2 = product;
-            request.getVariants().forEach(varReq -> {
-                ProductVariant newVariant = ProductVariant.builder()
-                    .product(finalProduct2)
+            for (var varReq : request.getVariants()) {
+                product.getVariants().add(ProductVariant.builder()
+                    .product(product)
                     .name(varReq.getName())
                     .sku(varReq.getSku())
                     .price(varReq.getPrice())
                     .stock(varReq.getStock())
                     .active(true)
-                    .build();
-                finalProduct2.getVariants().add(newVariant);
-            });
+                    .build());
+            }
         }
         
         product = productRepository.save(product);

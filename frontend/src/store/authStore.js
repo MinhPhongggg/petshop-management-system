@@ -8,8 +8,15 @@ export const useAuthStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
+      hasHydrated: false,
       isLoading: false,
       error: null,
+
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
+      syncAuthFromToken: () => {
+        const token = get().token;
+        set({ isAuthenticated: Boolean(token) });
+      },
 
       login: async (credentials) => {
         set({ isLoading: true, error: null });
@@ -25,7 +32,21 @@ export const useAuthStore = create(
           });
           return { success: true };
         } catch (error) {
-          const message = error.response?.data?.message || 'Đăng nhập thất bại';
+          const status = error.response?.status;
+          const data = error.response?.data;
+
+          let message = 'Đăng nhập thất bại';
+          if (!error.response) {
+            message = 'Không thể kết nối tới server. Vui lòng kiểm tra backend đang chạy (http://localhost:8080).';
+          } else if (data?.errors && typeof data.errors === 'object') {
+            // Validation errors from ApiResponse.error(..., errors)
+            const firstError = Object.values(data.errors).find(Boolean);
+            message = String(firstError || data?.message || message);
+          } else if (data?.message) {
+            message = data.message;
+          } else if (status) {
+            message = `${message} (HTTP ${status})`;
+          }
           set({ error: message, isLoading: false });
           return { success: false, error: message };
         }
@@ -45,7 +66,20 @@ export const useAuthStore = create(
           });
           return { success: true };
         } catch (error) {
-          const message = error.response?.data?.message || 'Đăng ký thất bại';
+          const status = error.response?.status;
+          const respData = error.response?.data;
+
+          let message = 'Đăng ký thất bại';
+          if (!error.response) {
+            message = 'Không thể kết nối tới server. Vui lòng kiểm tra backend đang chạy (http://localhost:8080).';
+          } else if (respData?.errors && typeof respData.errors === 'object') {
+            const firstError = Object.values(respData.errors).find(Boolean);
+            message = String(firstError || respData?.message || message);
+          } else if (respData?.message) {
+            message = respData.message;
+          } else if (status) {
+            message = `${message} (HTTP ${status})`;
+          }
           set({ error: message, isLoading: false });
           return { success: false, error: message };
         }
@@ -81,6 +115,16 @@ export const useAuthStore = create(
     {
       name: 'auth-storage',
       partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          // If rehydration fails, still unblock route guards.
+          state?.setHasHydrated(true);
+          return;
+        }
+
+        state?.setHasHydrated(true);
+        state?.syncAuthFromToken?.();
+      },
     }
   )
 );

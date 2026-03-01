@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs, Zoom } from 'swiper/modules';
-import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiCheck, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
+import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import { useCartStore } from '../store/cartStore';
 import ProductCard from '../components/product/ProductCard';
 import { productsApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 import 'swiper/css/zoom';
 
 const ProductDetailPage = () => {
+  const navigate = useNavigate();
   const { slug } = useParams();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -22,13 +24,10 @@ const ProductDetailPage = () => {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
   
-  const { addItemLocal } = useCartStore();
+  const { addItem, addItemLocal } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
 
-  useEffect(() => {
-    fetchProduct();
-  }, [slug]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     setLoading(true);
     try {
       const response = await productsApi.getBySlug(slug);
@@ -46,7 +45,11 @@ const ProductDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    fetchProduct();
+  }, [fetchProduct]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -56,12 +59,21 @@ const ProductDetailPage = () => {
   };
 
   const handleAddToCart = () => {
-    addItemLocal(product, selectedVariant, quantity);
+    if (isAuthenticated) {
+      addItem(product, selectedVariant, quantity);
+    } else {
+      addItemLocal(product, selectedVariant, quantity);
+    }
   };
 
-  const handleBuyNow = () => {
-    addItemLocal(product, selectedVariant, quantity);
-    window.location.href = '/checkout';
+  const handleBuyNow = async () => {
+    if (isAuthenticated) {
+      await addItem(product, selectedVariant, quantity);
+      navigate('/checkout');
+    } else {
+      addItemLocal(product, selectedVariant, quantity);
+      navigate('/checkout');
+    }
   };
 
   const discountPercent = product?.salePrice && product?.basePrice
