@@ -25,3 +25,4 @@ frontend/.env
 
 # Workspace accidentally nested inside itself
 petshop-management-system/
+/target/

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiSearch, FiStar, FiEye, FiEyeOff, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { reviewsApi, productsApi } from '../../services/api';
+import { reviewsApi } from '../../services/api';
 
 const AdminReviewsPage = () => {
   const [reviews, setReviews] = useState([]);
@@ -15,6 +15,7 @@ const AdminReviewsPage = () => {
 
   useEffect(() => {
     fetchReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, ratingFilter, statusFilter]);
 
   const fetchReviews = async () => {

@@ -9,7 +9,6 @@ import com.petshop.exception.BadRequestException;
 import com.petshop.exception.ResourceNotFoundException;
 import com.petshop.repository.*;
 import com.petshop.service.ProductService;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +29,6 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductVariantRepository productVariantRepository;
-    private final EntityManager entityManager;
     
     @Override
     @Transactional

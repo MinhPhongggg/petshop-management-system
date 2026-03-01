@@ -14,7 +14,7 @@ public interface InventoryService {
     StockMovementDTO importStock(StockMovementRequest request);
     
     // Điều chỉnh số lượng
-    StockMovementDTO adjustStock(StockMovementRequest request);
+    StockMovementDTO adjustStock(StockMovementRequest request)  ;
     
     // Lịch sử nhập/xuất kho
     Page<StockMovementDTO> getStockMovements(Long variantId, Pageable pageable);
