@@ -9,7 +9,7 @@ import { useAuthStore } from '../../store/authStore';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading } = useAuthStore();
   
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({

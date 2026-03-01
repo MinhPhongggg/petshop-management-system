@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  FiArrowLeft, FiSave, FiPlus, FiTrash2, FiImage, FiChevronRight,
-  FiX, FiUpload, FiDollarSign, FiPackage, FiInfo
+  FiArrowLeft, FiSave, FiPlus, FiTrash2, FiImage,
+  FiDollarSign, FiPackage, FiInfo
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { productsApi, categoriesApi } from '../../services/api';
@@ -16,7 +16,6 @@ const AdminProductFormPage = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [expandedCategories, setExpandedCategories] = useState(new Set());
 
   const [formData, setFormData] = useState({
     name: '',
@@ -38,6 +37,7 @@ const AdminProductFormPage = () => {
     if (isEditing) {
       fetchProduct();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchCategories = async () => {
@@ -180,19 +180,6 @@ const AdminProductFormPage = () => {
         images: prev.images.filter((_, i) => i !== index),
       }));
     }
-  };
-
-  // Category tree handlers
-  const toggleCategory = (categoryId) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
-    });
   };
 
   // Flatten categories for display

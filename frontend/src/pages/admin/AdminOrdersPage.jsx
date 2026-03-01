@@ -13,6 +13,7 @@ const AdminOrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   const fetchOrders = async () => {

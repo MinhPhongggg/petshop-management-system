@@ -15,7 +15,7 @@ const BookingPage = () => {
   const [step, setStep] = useState(1);
   const [services, setServices] = useState([]);
   const [pets, setPets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -67,6 +67,7 @@ const BookingPage = () => {
     if (formData.date) {
       generateTimeSlots();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.date, formData.serviceId]);
 
   const generateTimeSlots = () => {

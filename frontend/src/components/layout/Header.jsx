@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { FiSearch, FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiMenu, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 
 const Header = () => {

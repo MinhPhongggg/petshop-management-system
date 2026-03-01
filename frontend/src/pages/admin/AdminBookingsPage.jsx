@@ -15,6 +15,7 @@ const AdminBookingsPage = () => {
 
   useEffect(() => {
     fetchBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedDate]);
 
   const fetchBookings = async () => {

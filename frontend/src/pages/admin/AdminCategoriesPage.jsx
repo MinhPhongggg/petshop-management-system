@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiPlus, FiEdit2, FiTrash2, FiChevronRight, FiChevronDown, 
-  FiFolder, FiFolderPlus, FiImage, FiSave, FiX 
+  FiFolder, FiFolderPlus, FiSave, FiX 
 } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';

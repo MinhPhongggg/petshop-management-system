@@ -69,15 +69,7 @@ public class Pet {
         DOG, CAT, BIRD, FISH, HAMSTER, RABBIT, OTHER
     }
 
-    @Column(name = "is_active") // Đặt tên cột trong DB là is_active cho chuẩn
-    private Boolean active = true; // Mặc định là true khi tạo mới
-
-    // Nếu không dùng Lombok, nhớ tạo Getter/Setter cho nó
-    public Boolean getActive() {
-        return active;
-    }
-
-    public void setActive(Boolean active) {
-        this.active = active;
-    }
+    @Builder.Default
+    @Column(name = "is_active")
+    private Boolean active = true;
 }

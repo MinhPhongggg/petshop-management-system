@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
-import { FiArrowRight, FiCalendar, FiShoppingBag, FiStar, FiTruck, FiShield, FiHeart, FiPhone } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiTruck, FiShield, FiHeart, FiPhone } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -19,7 +19,7 @@ const HomePage = () => {
   const [newProducts, setNewProducts] = useState([]);
   const [services, setServices] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
