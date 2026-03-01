@@ -160,8 +160,10 @@ export const reviewsApi = {
   getByProduct: (productId, params) => api.get(`/reviews/product/${productId}`, { params }),
   create: (data) => api.post('/reviews', data),
   getMyReviews: (params) => api.get('/reviews/my-reviews', { params }),
+  update: (id, data) => api.put(`/reviews/${id}`, data),
   delete: (id) => api.delete(`/reviews/${id}`),
   // Admin endpoints
+  getAll: (params) => api.get('/reviews', { params }),
   replyToReview: (id, reply) => api.post(`/reviews/${id}/reply`, null, { params: { reply } }),
   hideReview: (id) => api.post(`/reviews/${id}/hide`),
   showReview: (id) => api.post(`/reviews/${id}/show`),

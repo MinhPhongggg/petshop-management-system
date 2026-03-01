@@ -42,6 +42,13 @@ public class ReviewController {
     }
     
     // Admin endpoints
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<ReviewDTO>> getAllReviews(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(reviewService.getAllReviews(pageable));
+    }
+    
     @PostMapping("/{id}/reply")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ReviewDTO> replyToReview(@PathVariable Long id, 
