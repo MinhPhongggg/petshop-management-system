@@ -45,6 +45,8 @@ export const authApi = {
   register: (data) => api.post('/auth/register', data),
   getMe: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
+  updateProfile: (data) => api.put('/auth/profile', data),
+  changePassword: (data) => api.put('/auth/change-password', data),
 };
 
 // Products API

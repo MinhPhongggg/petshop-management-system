@@ -14,6 +14,7 @@ import {
   FiBell,
   FiSearch,
   FiGrid,
+  FiStar,
 } from 'react-icons/fi';
 import { MdPets, MdSpa } from 'react-icons/md';
 
@@ -32,6 +33,7 @@ const AdminLayout = () => {
     { path: '/admin/bookings', icon: FiCalendar, label: 'Lịch đặt' },
     { path: '/admin/services', icon: MdSpa, label: 'Dịch vụ' },
     { path: '/admin/users', icon: FiUsers, label: 'Người dùng' },
+    { path: '/admin/reviews', icon: FiStar, label: 'Đánh giá' },
   ];
 
   const isActive = (path, exact = false) => {

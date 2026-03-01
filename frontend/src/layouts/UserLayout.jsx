@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiUser, FiPackage, FiCalendar, FiHeart, FiLogOut } from 'react-icons/fi';
+import { FiUser, FiPackage, FiCalendar, FiHeart, FiLogOut, FiStar } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,6 +14,7 @@ const UserLayout = () => {
     { path: '/my-orders', icon: FiPackage, label: 'Đơn hàng của tôi' },
     { path: '/my-bookings', icon: FiCalendar, label: 'Lịch hẹn của tôi' },
     { path: '/my-pets', icon: MdPets, label: 'Thú cưng của tôi' },
+    { path: '/my-reviews', icon: FiStar, label: 'Đánh giá của tôi' },
   ];
 
   const handleLogout = () => {

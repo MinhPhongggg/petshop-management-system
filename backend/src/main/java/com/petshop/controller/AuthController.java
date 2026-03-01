@@ -1,7 +1,9 @@
 package com.petshop.controller;
 
+import com.petshop.dto.request.ChangePasswordRequest;
 import com.petshop.dto.request.LoginRequest;
 import com.petshop.dto.request.RegisterRequest;
+import com.petshop.dto.request.UpdateProfileRequest;
 import com.petshop.dto.response.JwtResponse;
 import com.petshop.dto.response.UserDTO;
 import com.petshop.service.AuthService;
@@ -30,6 +32,17 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserDTO> getCurrentUser() {
         return ResponseEntity.ok(authService.getCurrentUser());
+    }
+    
+    @PutMapping("/profile")
+    public ResponseEntity<UserDTO> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(authService.updateProfile(request));
+    }
+    
+    @PutMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(request);
+        return ResponseEntity.ok().build();
     }
     
     @PostMapping("/logout")
