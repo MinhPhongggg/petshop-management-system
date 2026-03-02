@@ -69,8 +69,8 @@ const BookingPage = () => {
     }
   }, [formData.date, formData.serviceId]);
 
-  const generateTimeSlots = () => {
-    // Generate time slots from 8:00 to 18:00
+  const generateTimeSlots = async () => {
+    // Tạo các khung giờ từ 8:00 đến 18:00
     const slots = [];
     const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
     const duration = selectedService?.duration || 60;
@@ -82,13 +82,29 @@ const BookingPage = () => {
         
         if (endHour < 19 || (endHour === 19 && endMinute === 0)) {
           const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          // Randomly mark some as unavailable for demo
-          const available = Math.random() > 0.3;
-          slots.push({ time, available });
+          slots.push({ time, available: true }); // Mặc định là trống
         }
       }
     }
-    setAvailableSlots(slots);
+
+    // Kiểm tra từng khung giờ với API
+    const checkedSlots = await Promise.all(
+      slots.map(async (slot) => {
+        try {
+          const [h, m] = slot.time.split(':').map(Number);
+          const endMinTotal = h * 60 + m + duration;
+          const endH = Math.floor(endMinTotal / 60);
+          const endM = endMinTotal % 60;
+          const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+          
+          const response = await bookingsApi.checkAvailability(formData.date, slot.time, endTime);
+          return { ...slot, available: response.data.available };
+        } catch {
+          return { ...slot, available: true }; // Nếu lỗi thì coi như trống
+        }
+      })
+    );
+    setAvailableSlots(checkedSlots);
   };
 
   const handleChange = (e) => {
@@ -108,14 +124,14 @@ const BookingPage = () => {
     try {
       await bookingsApi.create({
         serviceId: parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id,
-        petId: formData.petId || null,
+        petId: (formData.petId && formData.petId !== 'new') ? parseInt(formData.petId) : null,
         bookingDate: formData.date,
         startTime: formData.time,
-        customerNote: formData.notes,  // BE expects 'customerNote' not 'notes'
+        customerNote: formData.notes,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail,
-        petInfo: !formData.petId ? {
+        petInfo: (!formData.petId || formData.petId === 'new') ? {
           name: formData.petName,
           type: formData.petType,
           breed: formData.petBreed,

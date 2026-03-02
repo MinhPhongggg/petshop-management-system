@@ -135,11 +135,7 @@ const AdminServicesPage = () => {
   const handleToggleStatus = async (service) => {
     try {
       const newActive = !service.active;
-      await servicesApi.update(service.id, {
-        name: service.name,
-        duration: service.duration,
-        active: newActive,
-      });
+      await servicesApi.toggleActive(service.id);
       toast.success(`Đã ${newActive ? 'kích hoạt' : 'ẩn'} dịch vụ`);
       fetchServices();
     } catch (error) {

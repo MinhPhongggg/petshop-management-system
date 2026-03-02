@@ -84,6 +84,7 @@ export const servicesApi = {
   getAll: () => api.get('/services/all'),
   create: (data) => api.post('/services', data),
   update: (id, data) => api.put(`/services/${id}`, data),
+  toggleActive: (id) => api.patch(`/services/${id}/toggle-active`),
   delete: (id) => api.delete(`/services/${id}`),
 };
 

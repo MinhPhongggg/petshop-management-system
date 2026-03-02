@@ -55,6 +55,12 @@ public class SpaServiceController {
         return ResponseEntity.ok(spaServiceService.updateService(id, request));
     }
     
+    @PatchMapping("/{id}/toggle-active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SpaServiceDTO> toggleServiceActive(@PathVariable Long id) {
+        return ResponseEntity.ok(spaServiceService.toggleActive(id));
+    }
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteService(@PathVariable Long id) {
