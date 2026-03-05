@@ -14,6 +14,9 @@ public interface SpaServiceService {
     SpaServiceDTO getServiceById(Long id);
     SpaServiceDTO getServiceBySlug(String slug);
     
+    // Toggle trạng thái
+    SpaServiceDTO toggleActive(Long id);
+    
     // Danh sách dịch vụ
     List<SpaServiceDTO> getAllServices();
     List<SpaServiceDTO> getActiveServices();
