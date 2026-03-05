@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiClock, FiEye, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
+import toast from 'react-hot-toast';
 import { bookingsApi } from '../../services/api';
 
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBookings();
@@ -16,13 +18,31 @@ const MyBookingsPage = () => {
 
   const fetchBookings = async () => {
     try {
-      const response = await bookingsApi.getMyBookings();
-      setBookings(response.data);
+      const response = await bookingsApi.getMyBookings({ size: 100 });
+      const data = response.data;
+      // Xử lý cả 2 trường hợp: dữ liệu phân trang (Page) hoặc mảng thường
+      setBookings(data.content || (Array.isArray(data) ? data : []));
     } catch (error) {
       console.error('Error fetching bookings:', error);
+      setBookings([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancelBooking = async (bookingId) => {
+    if (!window.confirm('Bạn có chắc muốn hủy lịch hẹn này?')) return;
+    try {
+      await bookingsApi.cancel(bookingId, 'Khách hàng tự hủy');
+      toast.success('Đã hủy lịch hẹn');
+      fetchBookings();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể hủy lịch hẹn');
+    }
+  };
+
+  const handleRebook = (booking) => {
+    navigate(`/booking?service=${booking.serviceId}`);
   };
 
   const tabs = [
@@ -138,7 +158,7 @@ const MyBookingsPage = () => {
                     <h3 className="text-xl font-bold text-gray-800">{booking.serviceName}</h3>
                   </div>
                   <p className="text-xl font-bold text-petshop-orange">
-                    {formatPrice(booking.price || booking.totalAmount)}
+                    {formatPrice(booking.price)}
                   </p>
                 </div>
 
@@ -161,14 +181,14 @@ const MyBookingsPage = () => {
                     <FiClock className="text-petshop-yellow" />
                     <div>
                       <p className="text-sm text-gray-500">Giờ hẹn</p>
-                      <p className="font-medium text-gray-800">{booking.startTime || booking.bookingTime}</p>
+                      <p className="font-medium text-gray-800">{booking.startTime ? booking.startTime.substring(0, 5) : ''}</p>
                     </div>
                   </div>
                 </div>
 
-                {(booking.customerNote || booking.notes) && (
+{booking.customerNote && (
                   <p className="text-sm text-gray-500 italic mb-4">
-                    Ghi chú: {booking.customerNote || booking.notes}
+                    Ghi chú: {booking.customerNote}
                   </p>
                 )}
 
@@ -180,12 +200,18 @@ const MyBookingsPage = () => {
                     <FiEye /> Chi tiết
                   </Link>
                   {booking.status === 'PENDING' && (
-                    <button className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-colors">
+                    <button
+                      onClick={() => handleCancelBooking(booking.id)}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-600 rounded-xl hover:bg-red-200 transition-colors"
+                    >
                       <FiX /> Hủy lịch
                     </button>
                   )}
                   {booking.status === 'COMPLETED' && (
-                    <button className="btn-primary flex items-center gap-2">
+                    <button
+                      onClick={() => handleRebook(booking)}
+                      className="btn-primary flex items-center gap-2"
+                    >
                       <FiRefreshCw /> Đặt lại
                     </button>
                   )}

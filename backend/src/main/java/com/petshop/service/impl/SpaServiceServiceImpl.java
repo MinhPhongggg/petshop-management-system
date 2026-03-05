@@ -142,6 +142,16 @@ public class SpaServiceServiceImpl implements SpaServiceService {
     
     @Override
     @Transactional
+    public SpaServiceDTO toggleActive(Long id) {
+        SpaService service = spaServiceRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
+        service.setActive(!service.getActive());
+        service = spaServiceRepository.save(service);
+        return mapToDTO(service);
+    }
+    
+    @Override
+    @Transactional
     public void deleteService(Long id) {
         SpaService service = spaServiceRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
