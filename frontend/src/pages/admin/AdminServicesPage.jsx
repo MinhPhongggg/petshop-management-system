@@ -17,7 +17,7 @@ const AdminServicesPage = () => {
     image: '',
     petType: 'ALL',
     pricings: [
-      { petType: 'DOG', minWeight: 0, maxWeight: 5, price: '' },
+      { petType: 'DOG', minWeight: 0, maxWeight: '', price: '' },
     ],
   });
 
@@ -53,7 +53,7 @@ const AdminServicesPage = () => {
   const addPricing = () => {
     setFormData(prev => ({
       ...prev,
-      pricings: [...prev.pricings, { petType: 'DOG', minWeight: 0, maxWeight: 10, price: '' }],
+      pricings: [...prev.pricings, { petType: 'DOG', minWeight: 0, maxWeight: '', price: '' }],
     }));
   };
 
@@ -77,8 +77,8 @@ const AdminServicesPage = () => {
         .filter(p => p.price)
         .map(p => ({
           petType: p.petType,
-          minWeight: parseFloat(p.minWeight),
-          maxWeight: parseFloat(p.maxWeight),
+          minWeight: parseFloat(p.minWeight) || 0,
+          maxWeight: p.maxWeight === '' || p.maxWeight === null ? null : parseFloat(p.maxWeight),
           price: parseFloat(p.price),
         })),
     };
@@ -111,8 +111,8 @@ const AdminServicesPage = () => {
       pricings: service.pricingList && service.pricingList.length > 0
         ? service.pricingList.map(p => ({
             petType: p.tierName || 'DOG',
-            minWeight: p.minWeight || 0,
-            maxWeight: p.maxWeight || 10,
+            minWeight: p.minWeight ?? 0,
+            maxWeight: p.maxWeight === null || p.maxWeight === undefined ? '' : p.maxWeight,
             price: p.price || '',
           }))
         : [{ petType: 'DOG', minWeight: 0, maxWeight: 5, price: '' }],
@@ -156,7 +156,7 @@ const AdminServicesPage = () => {
       image: '',
       petType: 'ALL',
       pricings: [
-        { petType: 'DOG', minWeight: 0, maxWeight: 5, price: '' },
+        { petType: 'DOG', minWeight: 0, maxWeight: '', price: '' },
       ],
     });
   };
@@ -337,8 +337,8 @@ const AdminServicesPage = () => {
                     value={formData.duration}
                     onChange={handleChange}
                     className="input-field"
-                    min="15"
-                    step="15"
+                    min="1"
+                    step="1"
                     required
                   />
                 </div>
@@ -390,57 +390,63 @@ const AdminServicesPage = () => {
                   </button>
                 </div>
                 <div className="space-y-3">
-                  {formData.pricings.map((pricing, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
-                      <select
-                        value={pricing.petType}
-                        onChange={(e) => handlePricingChange(index, 'petType', e.target.value)}
-                        className="input-field w-24 text-sm"
-                      >
-                        <option value="DOG">Chó</option>
-                        <option value="CAT">Mèo</option>
-                        <option value="BIRD">Chim</option>
-                        <option value="OTHER">Khác</option>
-                      </select>
-                      <input
-                        type="number"
-                        value={pricing.minWeight}
-                        onChange={(e) => handlePricingChange(index, 'minWeight', e.target.value)}
-                        className="input-field w-20 text-sm"
-                        placeholder="Min kg"
-                        min="0"
-                        step="0.5"
-                      />
-                      <span className="text-gray-400">-</span>
-                      <input
-                        type="number"
-                        value={pricing.maxWeight}
-                        onChange={(e) => handlePricingChange(index, 'maxWeight', e.target.value)}
-                        className="input-field w-20 text-sm"
-                        placeholder="Max kg"
-                        min="0"
-                        step="0.5"
-                      />
-                      <span className="text-gray-400 text-sm">kg</span>
-                      <input
-                        type="number"
-                        value={pricing.price}
-                        onChange={(e) => handlePricingChange(index, 'price', e.target.value)}
-                        className="input-field flex-1 text-sm"
-                        placeholder="Giá (VNĐ)"
-                        min="0"
-                      />
-                      {formData.pricings.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removePricing(index)}
-                          className="p-1 text-red-400 hover:text-red-600"
+                  {formData.pricings.map((pricing, index) => {
+                    const isLast = index === formData.pricings.length - 1;
+                    return (
+                      <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                        <select
+                          value={pricing.petType}
+                          onChange={(e) => handlePricingChange(index, 'petType', e.target.value)}
+                          className="input-field w-24 text-sm"
                         >
-                          <FiX className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                          <option value="DOG">Chó</option>
+                          <option value="CAT">Mèo</option>
+                          <option value="BIRD">Chim</option>
+                          <option value="OTHER">Khác</option>
+                        </select>
+                        <input
+                          type="number"
+                          value={pricing.minWeight}
+                          onChange={(e) => handlePricingChange(index, 'minWeight', e.target.value)}
+                          className="input-field w-20 text-sm"
+                          placeholder="Từ kg"
+                          min="0"
+                          step="any"
+                        />
+                        <span className="text-gray-400">-</span>
+                        <input
+                          type="number"
+                          value={pricing.maxWeight === null || pricing.maxWeight === '' ? '' : pricing.maxWeight}
+                          onChange={(e) => handlePricingChange(index, 'maxWeight', e.target.value === '' ? '' : e.target.value)}
+                          className={`input-field w-20 text-sm ${isLast ? 'placeholder-gray-400 italic' : ''}`}
+                          placeholder={isLast ? 'Max' : 'Đến kg'}
+                          min="0"
+                          step="any"
+                        />
+                        <span className="text-gray-400 text-sm">kg</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={pricing.price}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, '');
+                            handlePricingChange(index, 'price', val);
+                          }}
+                          className="input-field flex-1 text-sm"
+                          placeholder="Giá (VNĐ)"
+                        />
+                        {formData.pricings.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removePricing(index)}
+                            className="p-1 text-red-400 hover:text-red-600"
+                          >
+                            <FiX className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
