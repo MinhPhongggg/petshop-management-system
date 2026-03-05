@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiClock, FiDollarSign } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiClock, FiDollarSign, FiX } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { servicesApi } from '../../services/api';
@@ -14,10 +14,11 @@ const AdminServicesPage = () => {
     name: '',
     description: '',
     duration: 60,
-    basePrice: '',
     image: '',
-    petTypes: ['DOG', 'CAT'],
-    status: 'ACTIVE',
+    petType: 'ALL',
+    pricings: [
+      { petType: 'DOG', minWeight: 0, maxWeight: 5, price: '' },
+    ],
   });
 
   useEffect(() => {
@@ -41,44 +42,80 @@ const AdminServicesPage = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handlePetTypeChange = (type) => {
+  const handlePricingChange = (index, field, value) => {
+    setFormData(prev => {
+      const newPricings = [...prev.pricings];
+      newPricings[index] = { ...newPricings[index], [field]: value };
+      return { ...prev, pricings: newPricings };
+    });
+  };
+
+  const addPricing = () => {
     setFormData(prev => ({
       ...prev,
-      petTypes: prev.petTypes.includes(type)
-        ? prev.petTypes.filter(t => t !== type)
-        : [...prev.petTypes, type],
+      pricings: [...prev.pricings, { petType: 'DOG', minWeight: 0, maxWeight: 10, price: '' }],
+    }));
+  };
+
+  const removePricing = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      pricings: prev.pricings.filter((_, i) => i !== index),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      duration: parseInt(formData.duration),
+      image: formData.image,
+      petType: formData.petType,
+      pricings: formData.pricings
+        .filter(p => p.price)
+        .map(p => ({
+          petType: p.petType,
+          minWeight: parseFloat(p.minWeight),
+          maxWeight: parseFloat(p.maxWeight),
+          price: parseFloat(p.price),
+        })),
+    };
+
     try {
       if (editingService) {
-        await servicesApi.update(editingService.id, formData);
+        await servicesApi.update(editingService.id, payload);
         toast.success('Cập nhật dịch vụ thành công!');
       } else {
-        await servicesApi.create(formData);
+        await servicesApi.create(payload);
         toast.success('Thêm dịch vụ thành công!');
       }
       fetchServices();
       setShowModal(false);
       resetForm();
     } catch (error) {
-      toast.error('Có lỗi xảy ra');
+      console.error('Error:', error);
+      toast.error(error.response?.data?.message || 'Có lỗi xảy ra');
     }
   };
 
   const handleEdit = (service) => {
     setEditingService(service);
     setFormData({
-      name: service.name,
-      description: service.description,
-      duration: service.duration,
-      basePrice: service.basePrice,
-      image: service.image,
-      petTypes: service.petTypes,
-      status: service.status,
+      name: service.name || '',
+      description: service.description || '',
+      duration: service.duration || 60,
+      image: service.imageUrl || '',
+      petType: service.petType || 'ALL',
+      pricings: service.pricingList && service.pricingList.length > 0
+        ? service.pricingList.map(p => ({
+            petType: p.tierName || 'DOG',
+            minWeight: p.minWeight || 0,
+            maxWeight: p.maxWeight || 10,
+            price: p.price || '',
+          }))
+        : [{ petType: 'DOG', minWeight: 0, maxWeight: 5, price: '' }],
     });
     setShowModal(true);
   };
@@ -97,9 +134,13 @@ const AdminServicesPage = () => {
 
   const handleToggleStatus = async (service) => {
     try {
-      const newStatus = service.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-      await servicesApi.update(service.id, { ...service, status: newStatus });
-      toast.success(`Đã ${newStatus === 'ACTIVE' ? 'kích hoạt' : 'ẩn'} dịch vụ`);
+      const newActive = !service.active;
+      await servicesApi.update(service.id, {
+        name: service.name,
+        duration: service.duration,
+        active: newActive,
+      });
+      toast.success(`Đã ${newActive ? 'kích hoạt' : 'ẩn'} dịch vụ`);
       fetchServices();
     } catch (error) {
       toast.error('Không thể cập nhật trạng thái');
@@ -112,27 +153,35 @@ const AdminServicesPage = () => {
       name: '',
       description: '',
       duration: 60,
-      basePrice: '',
       image: '',
-      petTypes: ['DOG', 'CAT'],
-      status: 'ACTIVE',
+      petType: 'ALL',
+      pricings: [
+        { petType: 'DOG', minWeight: 0, maxWeight: 5, price: '' },
+      ],
     });
   };
 
   const formatPrice = (price) => {
+    if (!price && price !== 0) return 'Liên hệ';
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(price);
   };
 
-  const petTypeOptions = [
-    { value: 'DOG', label: 'Chó' },
-    { value: 'CAT', label: 'Mèo' },
-    { value: 'BIRD', label: 'Chim' },
-    { value: 'HAMSTER', label: 'Hamster' },
-    { value: 'RABBIT', label: 'Thỏ' },
-  ];
+  const getMinPrice = (service) => {
+    if (service.minPrice) return formatPrice(service.minPrice);
+    if (service.pricingList && service.pricingList.length > 0) {
+      const min = Math.min(...service.pricingList.map(p => p.price));
+      return formatPrice(min);
+    }
+    return 'Liên hệ';
+  };
+
+  const petTypeLabel = (type) => {
+    const map = { DOG: '🐕 Chó', CAT: '🐱 Mèo', BIRD: '🐦 Chim', FISH: '🐟 Cá', OTHER: '🐾 Khác', ALL: '🐾 Tất cả' };
+    return map[type] || type;
+  };
 
   if (loading) {
     return (
@@ -165,29 +214,30 @@ const AdminServicesPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`bg-white rounded-2xl shadow-sm overflow-hidden ${service.status === 'INACTIVE' ? 'opacity-60' : ''}`}
+            className={`bg-white rounded-2xl shadow-sm overflow-hidden ${!service.active ? 'opacity-60' : ''}`}
           >
             <div className="relative h-40">
               <img
-                src={service.image}
+                src={service.imageUrl || '/images/placeholder-service.jpg'}
                 alt={service.name}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute top-3 right-3 flex gap-2">
-                <button
-                  onClick={() => handleToggleStatus(service)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
-                    service.status === 'ACTIVE' ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'
-                  }`}
-                >
-                  {service.status === 'ACTIVE' ? <FiEye /> : <FiEyeOff />}
-                </button>
-              </div>
-              {service.status === 'INACTIVE' && (
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+              {!service.active && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center pointer-events-none">
                   <span className="bg-gray-800 text-white px-3 py-1 rounded-full text-sm">Đã ẩn</span>
                 </div>
               )}
+              <div className="absolute top-3 right-3 flex gap-2 z-10">
+                <button
+                  onClick={() => handleToggleStatus(service)}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shadow-md ${
+                    service.active ? 'bg-green-500 text-white' : 'bg-gray-400 text-white'
+                  }`}
+                  title={service.active ? 'Ẩn dịch vụ' : 'Hiện dịch vụ'}
+                >
+                  {service.active ? <FiEye /> : <FiEyeOff />}
+                </button>
+              </div>
             </div>
             <div className="p-4">
               <h3 className="text-lg font-bold text-gray-800 mb-2">{service.name}</h3>
@@ -200,20 +250,20 @@ const AdminServicesPage = () => {
                 </div>
                 <div className="flex items-center gap-1 text-petshop-orange font-medium">
                   <FiDollarSign />
-                  Từ {formatPrice(service.basePrice)}
+                  Từ {getMinPrice(service)}
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-1 mb-4">
-                {service.petTypes.map(type => (
-                  <span key={type} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                    {petTypeOptions.find(p => p.value === type)?.label || type}
-                  </span>
-                ))}
+                <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                  {petTypeLabel(service.petType)}
+                </span>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t">
-                <span className="text-sm text-gray-500">{service.bookingsCount} lượt đặt</span>
+                <span className="text-sm text-gray-500">
+                  {service.pricingList?.length || 0} mức giá
+                </span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(service)}
@@ -240,7 +290,7 @@ const AdminServicesPage = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           >
             <h2 className="text-xl font-bold text-gray-800 mb-6">
               {editingService ? 'Chỉnh sửa dịch vụ' : 'Thêm dịch vụ mới'}
@@ -279,7 +329,7 @@ const AdminServicesPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Thời gian (phút)
+                    Thời gian (phút) *
                   </label>
                   <input
                     type="number"
@@ -289,21 +339,25 @@ const AdminServicesPage = () => {
                     className="input-field"
                     min="15"
                     step="15"
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giá cơ bản (VNĐ)
+                    Loại thú cưng
                   </label>
-                  <input
-                    type="number"
-                    name="basePrice"
-                    value={formData.basePrice}
+                  <select
+                    name="petType"
+                    value={formData.petType}
                     onChange={handleChange}
                     className="input-field"
-                    placeholder="150000"
-                    required
-                  />
+                  >
+                    <option value="ALL">Tất cả</option>
+                    <option value="DOG">Chó</option>
+                    <option value="CAT">Mèo</option>
+                    <option value="BIRD">Chim</option>
+                    <option value="OTHER">Khác</option>
+                  </select>
                 </div>
               </div>
 
@@ -312,7 +366,7 @@ const AdminServicesPage = () => {
                   URL hình ảnh
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   name="image"
                   value={formData.image}
                   onChange={handleChange}
@@ -321,46 +375,73 @@ const AdminServicesPage = () => {
                 />
               </div>
 
+              {/* Bảng giá theo cân nặng */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Loại thú cưng áp dụng
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {petTypeOptions.map(type => (
-                    <label
-                      key={type.value}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border-2 transition-colors ${
-                        formData.petTypes.includes(type.value)
-                          ? 'border-petshop-orange bg-petshop-orange/10 text-petshop-orange'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Bảng giá theo cân nặng
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addPricing}
+                    className="text-sm text-petshop-green hover:underline flex items-center gap-1"
+                  >
+                    <FiPlus className="w-3 h-3" /> Thêm mức giá
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  {formData.pricings.map((pricing, index) => (
+                    <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl">
+                      <select
+                        value={pricing.petType}
+                        onChange={(e) => handlePricingChange(index, 'petType', e.target.value)}
+                        className="input-field w-24 text-sm"
+                      >
+                        <option value="DOG">Chó</option>
+                        <option value="CAT">Mèo</option>
+                        <option value="BIRD">Chim</option>
+                        <option value="OTHER">Khác</option>
+                      </select>
                       <input
-                        type="checkbox"
-                        checked={formData.petTypes.includes(type.value)}
-                        onChange={() => handlePetTypeChange(type.value)}
-                        className="hidden"
+                        type="number"
+                        value={pricing.minWeight}
+                        onChange={(e) => handlePricingChange(index, 'minWeight', e.target.value)}
+                        className="input-field w-20 text-sm"
+                        placeholder="Min kg"
+                        min="0"
+                        step="0.5"
                       />
-                      <MdPets />
-                      {type.label}
-                    </label>
+                      <span className="text-gray-400">-</span>
+                      <input
+                        type="number"
+                        value={pricing.maxWeight}
+                        onChange={(e) => handlePricingChange(index, 'maxWeight', e.target.value)}
+                        className="input-field w-20 text-sm"
+                        placeholder="Max kg"
+                        min="0"
+                        step="0.5"
+                      />
+                      <span className="text-gray-400 text-sm">kg</span>
+                      <input
+                        type="number"
+                        value={pricing.price}
+                        onChange={(e) => handlePricingChange(index, 'price', e.target.value)}
+                        className="input-field flex-1 text-sm"
+                        placeholder="Giá (VNĐ)"
+                        min="0"
+                      />
+                      {formData.pricings.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removePricing(index)}
+                          className="p-1 text-red-400 hover:text-red-600"
+                        >
+                          <FiX className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Trạng thái
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="input-field"
-                >
-                  <option value="ACTIVE">Hoạt động</option>
-                  <option value="INACTIVE">Tạm ẩn</option>
-                </select>
               </div>
 
               <div className="flex gap-3 pt-4">
