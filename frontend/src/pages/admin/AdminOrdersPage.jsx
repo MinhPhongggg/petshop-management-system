@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiSearch, FiEye, FiCheck, FiX, FiTruck, FiPackage } from 'react-icons/fi';
+import { FiSearch, FiEye, FiCheck, FiX, FiTruck, FiPackage, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { ordersApi } from '../../services/api';
 
-const AdminOrdersPage = () => {
+const AdminOrdersPage = ({ pageTitle = 'Quản lý đơn hàng', allowDelete = false }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
@@ -17,7 +17,10 @@ const AdminOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await ordersApi.getAll({ status: activeTab === 'all' ? '' : activeTab });
+      const response =
+        activeTab === 'all'
+          ? await ordersApi.getAll()
+          : await ordersApi.getByStatus(activeTab);
       setOrders(response.data.content || response.data);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -34,7 +37,26 @@ const AdminOrdersPage = () => {
       fetchOrders();
       setSelectedOrder(null);
     } catch (error) {
-      toast.error('Không thể cập nhật trạng thái');
+      const message =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === 'string' ? error.response.data : null) ||
+        'Không thể cập nhật trạng thái';
+      toast.error(message);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!allowDelete) return;
+    const ok = window.confirm('Bạn có chắc muốn xoá đơn hàng này không? Hành động không thể hoàn tác.');
+    if (!ok) return;
+
+    try {
+      await ordersApi.delete(orderId);
+      toast.success('Đã xoá đơn hàng');
+      if (selectedOrder?.id === orderId) setSelectedOrder(null);
+      fetchOrders();
+    } catch (error) {
+      toast.error('Không thể xoá đơn hàng');
     }
   };
 
@@ -42,8 +64,10 @@ const AdminOrdersPage = () => {
     { id: 'all', label: 'Tất cả', icon: FiPackage },
     { id: 'PENDING', label: 'Chờ xác nhận' },
     { id: 'CONFIRMED', label: 'Đã xác nhận' },
+    { id: 'PROCESSING', label: 'Đang chuẩn bị' },
     { id: 'SHIPPING', label: 'Đang giao' },
     { id: 'DELIVERED', label: 'Đã giao' },
+    { id: 'COMPLETED', label: 'Hoàn thành' },
     { id: 'CANCELLED', label: 'Đã hủy' },
   ];
 
@@ -51,8 +75,10 @@ const AdminOrdersPage = () => {
     const statusConfig = {
       PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'Chờ xác nhận' },
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Đã xác nhận' },
+      PROCESSING: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Đang chuẩn bị' },
       SHIPPING: { bg: 'bg-purple-100', text: 'text-purple-600', label: 'Đang giao' },
       DELIVERED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Đã giao' },
+      COMPLETED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Hoàn thành' },
       CANCELLED: { bg: 'bg-red-100', text: 'text-red-600', label: 'Đã hủy' },
     };
     const config = statusConfig[status] || statusConfig.PENDING;
@@ -81,8 +107,9 @@ const AdminOrdersPage = () => {
   };
 
   const filteredOrders = orders.filter(order =>
-    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+    String(order.orderCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(order.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(order.receiverName || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -95,7 +122,7 @@ const AdminOrdersPage = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">Quản lý đơn hàng</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">{pageTitle}</h1>
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -152,11 +179,11 @@ const AdminOrdersPage = () => {
                   transition={{ delay: index * 0.05 }}
                   className="hover:bg-gray-50"
                 >
-                  <td className="px-6 py-4 font-medium text-gray-800">{order.orderNumber}</td>
+                  <td className="px-6 py-4 font-medium text-gray-800">{order.orderCode}</td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium text-gray-800">{order.customer.name}</p>
-                      <p className="text-sm text-gray-500">{order.customer.phone}</p>
+                      <p className="font-medium text-gray-800">{order.userName || order.receiverName}</p>
+                      <p className="text-sm text-gray-500">{order.userPhone || order.receiverPhone}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4 font-medium text-petshop-orange">
@@ -173,6 +200,15 @@ const AdminOrdersPage = () => {
                       >
                         <FiEye />
                       </button>
+                      {allowDelete && (
+                        <button
+                          onClick={() => handleDeleteOrder(order.id)}
+                          className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                          title="Xoá đơn"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      )}
                       {order.status === 'PENDING' && (
                         <>
                           <button
@@ -192,6 +228,16 @@ const AdminOrdersPage = () => {
                         </>
                       )}
                       {order.status === 'CONFIRMED' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'PROCESSING')}
+                          className="p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg"
+                          title="Đang chuẩn bị"
+                        >
+                          <FiPackage />
+                        </button>
+                      )}
+
+                      {order.status === 'PROCESSING' && (
                         <button
                           onClick={() => handleUpdateStatus(order.id, 'SHIPPING')}
                           className="p-2 text-gray-500 hover:text-purple-500 hover:bg-purple-50 rounded-lg"
@@ -219,7 +265,7 @@ const AdminOrdersPage = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-800">
-                Chi tiết đơn hàng {selectedOrder.orderNumber}
+                Chi tiết đơn hàng {selectedOrder.orderCode}
               </h2>
               <button
                 onClick={() => setSelectedOrder(null)}
@@ -233,9 +279,9 @@ const AdminOrdersPage = () => {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h3 className="font-medium text-gray-800 mb-2">Thông tin khách hàng</h3>
-                  <p className="text-gray-600">{selectedOrder.customer.name}</p>
-                  <p className="text-gray-600">{selectedOrder.customer.phone}</p>
-                  <p className="text-gray-600">{selectedOrder.customer.email}</p>
+                  <p className="text-gray-600">{selectedOrder.userName || selectedOrder.receiverName}</p>
+                  <p className="text-gray-600">{selectedOrder.userPhone || selectedOrder.receiverPhone}</p>
+                  <p className="text-gray-600">{selectedOrder.userEmail}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-4">
                   <h3 className="font-medium text-gray-800 mb-2">Địa chỉ giao hàng</h3>
@@ -250,9 +296,12 @@ const AdminOrdersPage = () => {
                     <div key={item.id} className="flex items-center justify-between py-2 border-b">
                       <div>
                         <p className="font-medium text-gray-800">{item.productName}</p>
+                        {item.variantName && (
+                          <p className="text-sm text-gray-500">{item.variantName}</p>
+                        )}
                         <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
-                      <p className="font-medium text-petshop-orange">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="font-medium text-petshop-orange">{formatPrice(item.unitPrice * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
@@ -284,6 +333,15 @@ const AdminOrdersPage = () => {
                 )}
                 {selectedOrder.status === 'CONFIRMED' && (
                   <button
+                    onClick={() => handleUpdateStatus(selectedOrder.id, 'PROCESSING')}
+                    className="flex-1 btn-primary"
+                  >
+                    Đang chuẩn bị
+                  </button>
+                )}
+
+                {selectedOrder.status === 'PROCESSING' && (
+                  <button
                     onClick={() => handleUpdateStatus(selectedOrder.id, 'SHIPPING')}
                     className="flex-1 btn-primary"
                   >
@@ -296,6 +354,15 @@ const AdminOrdersPage = () => {
                     className="flex-1 btn-primary"
                   >
                     Đã giao thành công
+                  </button>
+                )}
+                {allowDelete && (
+                  <button
+                    onClick={() => handleDeleteOrder(selectedOrder.id)}
+                    className="px-4 py-3 bg-red-100 text-red-600 rounded-xl hover:bg-red-200"
+                    title="Xoá đơn"
+                  >
+                    Xoá đơn
                   </button>
                 )}
               </div>

@@ -28,7 +28,7 @@ const AdminLayout = () => {
     { path: '/admin', icon: FiHome, label: 'Dashboard', exact: true },
     { path: '/admin/products', icon: FiPackage, label: 'Sản phẩm' },
     { path: '/admin/categories', icon: FiGrid, label: 'Danh mục' },
-    { path: '/admin/orders', icon: FiShoppingCart, label: 'Đơn hàng' },
+    { path: '/admin/sales', icon: FiShoppingCart, label: 'Đơn hàng' },
     { path: '/admin/bookings', icon: FiCalendar, label: 'Lịch đặt' },
     { path: '/admin/services', icon: MdSpa, label: 'Dịch vụ' },
     { path: '/admin/users', icon: FiUsers, label: 'Người dùng' },
