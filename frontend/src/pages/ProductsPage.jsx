@@ -30,7 +30,7 @@ const ProductsPage = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [filters]);
+  }, [filters, categories]);
 
   const fetchCategories = async () => {
     try {
@@ -52,6 +52,18 @@ const ProductsPage = () => {
       }
       return newSet;
     });
+  };
+
+  // Helper function to find category by slug (including nested children)
+  const findCategoryBySlug = (categories, slug) => {
+    for (const cat of categories) {
+      if (cat.slug === slug) return cat;
+      if (cat.children && cat.children.length > 0) {
+        const found = findCategoryBySlug(cat.children, slug);
+        if (found) return found;
+      }
+    }
+    return null;
   };
 
   // Component hiển thị một danh mục
@@ -144,11 +156,18 @@ const ProductsPage = () => {
       if (filters.search) {
         response = await productsApi.search(filters.search, params);
       } else if (filters.category || filters.minPrice || filters.maxPrice) {
+        // Tìm categoryId từ slug nếu có
+        let categoryId = null;
+        if (filters.category && categories.length > 0) {
+          const foundCategory = findCategoryBySlug(categories, filters.category);
+          categoryId = foundCategory ? foundCategory.id : null;
+        }
+        
         response = await productsApi.filter({
           ...params,
-          categoryId: filters.category,
-          minPrice: filters.minPrice,
-          maxPrice: filters.maxPrice,
+          categoryId: categoryId,
+          minPrice: filters.minPrice || null,
+          maxPrice: filters.maxPrice || null,
         });
       } else {
         response = await productsApi.getAll(params);
@@ -165,6 +184,17 @@ const ProductsPage = () => {
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value, page: 0 };
+    setFilters(newFilters);
+    
+    const params = new URLSearchParams();
+    Object.entries(newFilters).forEach(([k, v]) => {
+      if (v) params.set(k, v);
+    });
+    setSearchParams(params);
+  };
+
+  const handlePriceRangeChange = (min, max) => {
+    const newFilters = { ...filters, minPrice: min, maxPrice: max, page: 0 };
     setFilters(newFilters);
     
     const params = new URLSearchParams();
@@ -336,10 +366,7 @@ const ProductsPage = () => {
                           type="radio"
                           name="price"
                           checked={filters.minPrice === range.min && filters.maxPrice === range.max}
-                          onChange={() => {
-                            handleFilterChange('minPrice', range.min);
-                            handleFilterChange('maxPrice', range.max);
-                          }}
+                          onChange={() => handlePriceRangeChange(range.min, range.max)}
                           className="w-4 h-4 text-petshop-orange"
                         />
                         <span className="text-gray-700">{range.label}</span>
