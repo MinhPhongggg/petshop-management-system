@@ -1,25 +1,32 @@
-import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiUser, FiPackage, FiCalendar, FiHeart, FiLogOut, FiStar } from 'react-icons/fi';
-import { MdPets } from 'react-icons/md';
-import { useAuthStore } from '../store/authStore';
+import React from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  FiUser,
+  FiPackage,
+  FiCalendar,
+  FiHeart,
+  FiLogOut,
+  FiStar,
+} from "react-icons/fi";
+import { MdPets } from "react-icons/md";
+import { useAuthStore } from "../store/authStore";
 
 const UserLayout = () => {
   const location = useLocation();
   const { user, logout } = useAuthStore();
 
   const menuItems = [
-    { path: '/profile', icon: FiUser, label: 'Thông tin cá nhân' },
-    { path: '/my-orders', icon: FiPackage, label: 'Đơn hàng của tôi' },
-    { path: '/my-bookings', icon: FiCalendar, label: 'Lịch hẹn của tôi' },
-    { path: '/my-pets', icon: MdPets, label: 'Thú cưng của tôi' },
-    { path: '/my-reviews', icon: FiStar, label: 'Đánh giá của tôi' },
+    { path: "/profile", icon: FiUser, label: "Thông tin cá nhân" },
+    { path: "/my-orders", icon: FiPackage, label: "Đơn hàng của tôi" },
+    { path: "/my-bookings", icon: FiCalendar, label: "Lịch hẹn của tôi" },
+    { path: "/my-pets", icon: MdPets, label: "Thú cưng của tôi" },
+    { path: "/my-reviews", icon: FiStar, label: "Đánh giá của tôi" },
   ];
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   return (
@@ -33,13 +40,19 @@ const UserLayout = () => {
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
                   {user?.avatar ? (
-                    <img src={user.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                    <img
+                      src={user.avatar}
+                      alt="Avatar"
+                      className="w-full h-full rounded-full object-cover"
+                    />
                   ) : (
                     <FiUser className="text-2xl" />
                   )}
                 </div>
                 <div>
-                  <h3 className="font-bold">{user?.fullName || 'Người dùng'}</h3>
+                  <h3 className="font-bold">
+                    {user?.fullName || "Người dùng"}
+                  </h3>
                   <p className="text-sm opacity-90">{user?.email}</p>
                 </div>
               </div>
@@ -56,8 +69,8 @@ const UserLayout = () => {
                         to={item.path}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                           isActive
-                            ? 'bg-petshop-orange text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
+                            ? "bg-petshop-orange text-white"
+                            : "text-gray-600 hover:bg-gray-100"
                         }`}
                       >
                         <item.icon className="text-xl" />

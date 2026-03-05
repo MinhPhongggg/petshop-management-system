@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import React, { useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 import {
   FiHome,
   FiPackage,
@@ -15,8 +15,8 @@ import {
   FiSearch,
   FiGrid,
   FiStar,
-} from 'react-icons/fi';
-import { MdPets, MdSpa } from 'react-icons/md';
+} from "react-icons/fi";
+import { MdPets, MdSpa } from "react-icons/md";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -26,14 +26,14 @@ const AdminLayout = () => {
   const { user, logout } = useAuthStore();
 
   const menuItems = [
-    { path: '/admin', icon: FiHome, label: 'Dashboard', exact: true },
-    { path: '/admin/products', icon: FiPackage, label: 'Sản phẩm' },
-    { path: '/admin/categories', icon: FiGrid, label: 'Danh mục' },
-    { path: '/admin/orders', icon: FiShoppingCart, label: 'Đơn hàng' },
-    { path: '/admin/bookings', icon: FiCalendar, label: 'Lịch đặt' },
-    { path: '/admin/services', icon: MdSpa, label: 'Dịch vụ' },
-    { path: '/admin/users', icon: FiUsers, label: 'Người dùng' },
-    { path: '/admin/reviews', icon: FiStar, label: 'Đánh giá' },
+    { path: "/admin", icon: FiHome, label: "Dashboard", exact: true },
+    { path: "/admin/products", icon: FiPackage, label: "Sản phẩm" },
+    { path: "/admin/categories", icon: FiGrid, label: "Danh mục" },
+    { path: "/admin/orders", icon: FiShoppingCart, label: "Đơn hàng" },
+    { path: "/admin/bookings", icon: FiCalendar, label: "Lịch đặt" },
+    { path: "/admin/services", icon: MdSpa, label: "Dịch vụ" },
+    { path: "/admin/users", icon: FiUsers, label: "Người dùng" },
+    { path: "/admin/reviews", icon: FiStar, label: "Đánh giá" },
   ];
 
   const isActive = (path, exact = false) => {
@@ -43,7 +43,7 @@ const AdminLayout = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   return (
@@ -59,8 +59,8 @@ const AdminLayout = () => {
       {/* Sidebar */}
       <aside
         className={`fixed top-0 left-0 h-full bg-white shadow-xl z-50 transition-all duration-300
-          ${sidebarOpen ? 'w-64' : 'w-20'}
-          ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${sidebarOpen ? "w-64" : "w-20"}
+          ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
         {/* Logo */}
@@ -88,9 +88,10 @@ const AdminLayout = () => {
               key={item.path}
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                ${isActive(item.path, item.exact)
-                  ? 'bg-petshop-orange text-white shadow-lg shadow-petshop-orange/30'
-                  : 'text-gray-600 hover:bg-gray-100'
+                ${
+                  isActive(item.path, item.exact)
+                    ? "bg-petshop-orange text-white shadow-lg shadow-petshop-orange/30"
+                    : "text-gray-600 hover:bg-gray-100"
                 }
               `}
             >
@@ -110,7 +111,9 @@ const AdminLayout = () => {
       </aside>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}`}>
+      <div
+        className={`transition-all duration-300 ${sidebarOpen ? "lg:ml-64" : "lg:ml-20"}`}
+      >
         {/* Top Header */}
         <header className="h-16 bg-white shadow-sm flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
           <div className="flex items-center gap-4">
@@ -120,7 +123,7 @@ const AdminLayout = () => {
             >
               <FiMenu className="w-5 h-5" />
             </button>
-            
+
             {/* Search */}
             <div className="hidden md:flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-2">
               <FiSearch className="w-5 h-5 text-gray-400" />
@@ -146,7 +149,7 @@ const AdminLayout = () => {
                 <p className="text-sm text-gray-500">{user?.role}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-br from-petshop-orange to-petshop-yellow rounded-xl flex items-center justify-center text-white font-bold">
-                {user?.fullName?.charAt(0) || 'A'}
+                {user?.fullName?.charAt(0) || "A"}
               </div>
               <button
                 onClick={handleLogout}
