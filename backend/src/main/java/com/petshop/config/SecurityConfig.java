@@ -74,6 +74,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/code/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").permitAll()
                         
+                        // Public GET - Reward tiers
+                        .requestMatchers(HttpMethod.GET, "/api/rewards/tiers").permitAll()
+                        
                         // Booking availability check
                         .requestMatchers(HttpMethod.GET, "/api/bookings/check-availability").permitAll()
                         

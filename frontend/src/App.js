@@ -28,6 +28,8 @@ import ProfilePage from './pages/user/ProfilePage';
 import MyOrdersPage from './pages/user/MyOrdersPage';
 import MyBookingsPage from './pages/user/MyBookingsPage';
 import MyPetsPage from './pages/user/MyPetsPage';
+import MyRewardsPage from './pages/user/MyRewardsPage';
+import MyVouchersPage from './pages/user/MyVouchersPage';
 import MyReviewsPage from './pages/user/MyReviewsPage';
 
 // Admin Pages
@@ -40,6 +42,7 @@ import AdminSalesPage from './pages/admin/AdminSalesPage';
 import AdminBookingsPage from './pages/admin/AdminBookingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminVouchersPage from './pages/admin/AdminVouchersPage';
 import AdminReviewsPage from './pages/admin/AdminReviewsPage';
 
 // Components
@@ -99,6 +102,8 @@ function App() {
             <Route path="my-orders" element={<MyOrdersPage />} />
             <Route path="my-bookings" element={<MyBookingsPage />} />
             <Route path="my-pets" element={<MyPetsPage />} />
+            <Route path="my-rewards" element={<MyRewardsPage />} />
+            <Route path="my-vouchers" element={<MyVouchersPage />} />
             <Route path="my-reviews" element={<MyReviewsPage />} />
           </Route>
         </Route>
@@ -115,6 +120,7 @@ function App() {
           <Route path="bookings" element={<AdminBookingsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="services" element={<AdminServicesPage />} />
+          <Route path="vouchers" element={<AdminVouchersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>
       </Routes>

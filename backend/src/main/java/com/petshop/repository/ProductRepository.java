@@ -60,4 +60,22 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     
     // Đếm sản phẩm active
     long countByActiveIsTrue();
+    
+    // ==================== ANALYTICS QUERIES ====================
+    
+    // Sales Velocity - tốc độ bán hàng top 10, kèm category
+    @Query(value = "SELECT p.id, p.name, " +
+                   "(SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as image, " +
+                   "c.name as category_name, p.sold_count, " +
+                   "COALESCE(p.base_price * p.sold_count, 0) as revenue " +
+                   "FROM products p " +
+                   "LEFT JOIN categories c ON p.category_id = c.id " +
+                   "WHERE p.active = true AND p.sold_count > 0 " +
+                   "ORDER BY p.sold_count DESC LIMIT 10", nativeQuery = true)
+    List<Object[]> getSalesVelocity();
+    
+    // Tổng giá trị tồn kho
+    @Query(value = "SELECT COALESCE(SUM(pv.price * pv.stock), 0) " +
+                   "FROM product_variants pv WHERE pv.active = true", nativeQuery = true)
+    BigDecimal getTotalInventoryValue();
 }

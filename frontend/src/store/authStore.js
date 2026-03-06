@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authApi } from '../services/api';
+import { useCartStore } from './cartStore';
 
 export const useAuthStore = create(
   persist(
@@ -30,6 +31,8 @@ export const useAuthStore = create(
             isAuthenticated: true,
             isLoading: false,
           });
+          // Sync local cart to server after login
+          await useCartStore.getState().syncLocalCartToServer();
           return { success: true };
         } catch (error) {
           const status = error.response?.status;
@@ -64,6 +67,8 @@ export const useAuthStore = create(
             isAuthenticated: true,
             isLoading: false,
           });
+          // Sync local cart to server after register
+          await useCartStore.getState().syncLocalCartToServer();
           return { success: true };
         } catch (error) {
           const status = error.response?.status;
@@ -92,6 +97,8 @@ export const useAuthStore = create(
           isAuthenticated: false,
           error: null,
         });
+        // Clear cart on logout so next guest starts fresh
+        useCartStore.getState().clearCartLocal();
       },
 
       fetchUser: async () => {

@@ -93,6 +93,28 @@ export const useCartStore = create(
         }
       },
 
+      // Sync local cart to server (on login)
+      syncLocalCartToServer: async () => {
+        const localItems = get().items;
+        if (localItems.length === 0) {
+          // No local items, just fetch server cart
+          await get().fetchCart();
+          return;
+        }
+        try {
+          for (const item of localItems) {
+            const variantId = item.variantId || item.variant?.id;
+            if (variantId) {
+              await cartApi.add({ variantId, quantity: item.quantity });
+            }
+          }
+        } catch (error) {
+          console.error('Cart sync error:', error);
+        }
+        // Fetch merged cart from server
+        await get().fetchCart();
+      },
+
       // Local cart operations (for guest users)
       addItemLocal: (product, variant, quantity = 1) => {
         const existingItem = get().items.find(

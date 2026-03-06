@@ -29,7 +29,9 @@ public class VoucherDTO {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Voucher.ApplyTo applyTo;
+    private Voucher.VoucherCategory voucherCategory;
     private Boolean active;
     private Boolean isValid;
+    private Boolean saved;
     private LocalDateTime createdAt;
 }

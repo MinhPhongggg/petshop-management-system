@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiGift } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { petsApi } from '../../services/api';
@@ -17,6 +17,7 @@ const MyPetsPage = () => {
     age: '',
     weight: '',
     gender: 'MALE',
+    birthday: '',
     notes: '',
   });
 
@@ -77,6 +78,7 @@ const MyPetsPage = () => {
       age: pet.age,
       weight: pet.weight,
       gender: pet.gender,
+      birthday: pet.birthday || '',
       notes: pet.notes || '',
     });
     setShowModal(true);
@@ -103,6 +105,7 @@ const MyPetsPage = () => {
       age: '',
       weight: '',
       gender: 'MALE',
+      birthday: '',
       notes: '',
     });
   };
@@ -199,6 +202,12 @@ const MyPetsPage = () => {
                   <p className="text-gray-500">
                     <span className="font-medium text-gray-700">Cân nặng:</span> {pet.weight} kg
                   </p>
+                  {pet.birthday && (
+                    <p className="text-gray-500 col-span-2 flex items-center gap-1">
+                      <FiGift className="text-pink-500" />
+                      <span className="font-medium text-gray-700">Sinh nhật:</span> {new Date(pet.birthday).toLocaleDateString('vi-VN')}
+                    </p>
+                  )}
                 </div>
                 {pet.notes && (
                   <p className="text-sm text-gray-500 italic mt-3 pt-3 border-t">
@@ -318,6 +327,21 @@ const MyPetsPage = () => {
                     step="0.1"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ngày sinh 🎂
+                </label>
+                <input
+                  type="date"
+                  name="birthday"
+                  value={formData.birthday}
+                  onChange={handleChange}
+                  className="input-field"
+                  max={new Date().toISOString().split('T')[0]}
+                />
+                <p className="text-xs text-gray-400 mt-1">Thú cưng sẽ nhận voucher đặc biệt vào ngày sinh nhật!</p>
               </div>
 
               <div>

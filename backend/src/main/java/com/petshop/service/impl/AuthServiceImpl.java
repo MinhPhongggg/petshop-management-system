@@ -11,7 +11,9 @@ import com.petshop.repository.UserRepository;
 import com.petshop.security.JwtTokenProvider;
 import com.petshop.security.UserPrincipal;
 import com.petshop.service.AuthService;
+import com.petshop.service.VoucherService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -28,6 +31,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final VoucherService voucherService;
     
     @Override
     public JwtResponse login(LoginRequest request) {
@@ -70,6 +74,13 @@ public class AuthServiceImpl implements AuthService {
             .build();
         
         user = userRepository.save(user);
+
+        // Tạo voucher chào mừng cho khách hàng mới
+        try {
+            voucherService.generateWelcomeVoucher(user.getId());
+        } catch (Exception e) {
+            log.warn("Failed to generate welcome voucher for user {}: {}", user.getEmail(), e.getMessage());
+        }
         
         // Auto login
         Authentication authentication = authenticationManager.authenticate(

@@ -40,6 +40,7 @@ public class PetServiceImpl implements PetService {
             .age(request.getAge())
             .notes(request.getNotes())
             .image(request.getImage())
+            .birthday(request.getBirthday())
             .build();
         
         pet = petRepository.save(pet);
@@ -60,6 +61,7 @@ public class PetServiceImpl implements PetService {
         pet.setAge(request.getAge());
         pet.setNotes(request.getNotes());
         pet.setImage(request.getImage());
+        pet.setBirthday(request.getBirthday());
         
         pet = petRepository.save(pet);
         return mapToDTO(pet);
@@ -112,6 +114,7 @@ public class PetServiceImpl implements PetService {
             .age(pet.getAge())
             .notes(pet.getNotes())
             .avatarUrl(pet.getImage())
+            .birthDate(pet.getBirthday())
             .ownerId(pet.getOwner().getId())
             .ownerName(pet.getOwner().getFullName())
             .createdAt(pet.getCreatedAt())

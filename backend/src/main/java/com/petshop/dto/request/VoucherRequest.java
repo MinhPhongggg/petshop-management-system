@@ -39,4 +39,6 @@ public class VoucherRequest {
     private Voucher.ApplyTo applyTo = Voucher.ApplyTo.ALL;
     
     private Boolean active = true;
+
+    private Voucher.VoucherCategory voucherCategory = Voucher.VoucherCategory.GENERAL;
 }

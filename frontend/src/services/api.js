@@ -196,6 +196,34 @@ export const dashboardApi = {
   getDashboardByRange: (startDate, endDate) => api.get('/dashboard/range', { params: { startDate, endDate } }),
 };
 
+// Analytics API (Admin) - Thống kê & Báo cáo nâng cao
+export const analyticsApi = {
+  getFullAnalytics: () => api.get('/analytics'),
+  getFullAnalyticsByRange: (startDate, endDate) => api.get('/analytics/range', { params: { startDate, endDate } }),
+  getServiceAnalytics: (startDate, endDate) => api.get('/analytics/services', { params: { startDate, endDate } }),
+  getInventoryAnalytics: () => api.get('/analytics/inventory'),
+  getPetAnalytics: () => api.get('/analytics/pets'),
+};
+
+// Vouchers API
+export const vouchersApi = {
+  // Public
+  getActive: () => api.get('/vouchers/active'),
+  getByCode: (code) => api.get(`/vouchers/code/${code}`),
+  apply: (code, orderAmount) => api.post('/vouchers/apply', null, { params: { code, orderAmount } }),
+  // Customer wallet
+  saveVoucher: (id) => api.post(`/vouchers/save/${id}`),
+  unsaveVoucher: (id) => api.delete(`/vouchers/unsave/${id}`),
+  getMySaved: () => api.get('/vouchers/my-saved'),
+  // Admin
+  getAll: (params) => api.get('/vouchers', { params }),
+  getById: (id) => api.get(`/vouchers/${id}`),
+  create: (data) => api.post('/vouchers', data),
+  update: (id, data) => api.put(`/vouchers/${id}`, data),
+  delete: (id) => api.delete(`/vouchers/${id}`),
+  getUsageHistory: (id, params) => api.get(`/vouchers/${id}/usage-history`, { params }),
+};
+
 // Users API (Admin)
 export const usersApi = {
   getAll: (params) => api.get('/users', { params }),
@@ -203,6 +231,13 @@ export const usersApi = {
   update: (id, data) => api.put(`/users/${id}`, data),
   updateStatus: (id, status) => api.put(`/users/${id}/status`, null, { params: { status } }),
   delete: (id) => api.delete(`/users/${id}`),
+};
+
+// Rewards API
+export const rewardsApi = {
+  getMyProgress: () => api.get('/rewards/my-progress'),
+  getTiers: () => api.get('/rewards/tiers'),
+  getUserProgress: (userId) => api.get(`/rewards/user/${userId}`),
 };
 
 // Import API (Admin)

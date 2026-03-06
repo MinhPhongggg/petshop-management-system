@@ -10,7 +10,10 @@ import com.petshop.repository.*;
 import com.petshop.security.UserPrincipal;
 import com.petshop.service.CartService;
 import com.petshop.service.OrderService;
+import com.petshop.service.RewardService;
+import com.petshop.service.VoucherService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -25,6 +28,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -36,7 +40,10 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final VoucherRepository voucherRepository;
+    private final VoucherUsageLogRepository voucherUsageLogRepository;
     private final CartService cartService;
+    private final RewardService rewardService;
+    private final VoucherService voucherService;
 
     private static final BigDecimal DEFAULT_SHIPPING_FEE = BigDecimal.valueOf(30000);
 
@@ -165,6 +172,16 @@ public class OrderServiceImpl implements OrderService {
         if (voucher != null) {
             voucher.setUsedCount(voucher.getUsedCount() + 1);
             voucherRepository.save(voucher);
+
+            // Log voucher usage for admin analytics
+            VoucherUsageLog usageLog = VoucherUsageLog.builder()
+                    .user(user)
+                    .voucher(voucher)
+                    .order(order)
+                    .orderAmount(subtotal)
+                    .discountAmount(discountAmount)
+                    .build();
+            voucherUsageLogRepository.save(usageLog);
         }
 
         // Clear cart only if using cart items (not items from request)
@@ -315,6 +332,22 @@ public class OrderServiceImpl implements OrderService {
         }
         
         order = orderRepository.save(order);
+
+        // Kiểm tra và mở khóa hạng thưởng mới
+        try {
+            rewardService.checkAndUnlockRewards(order.getUser().getId());
+        } catch (Exception e) {
+            // Log nhưng không ảnh hưởng đến việc hoàn thành đơn
+            log.warn("Failed to check rewards for user {}: {}", order.getUser().getId(), e.getMessage());
+        }
+
+        // Tạo voucher định kỳ nếu đơn hàng có sản phẩm lớn (thức ăn, cát vệ sinh...)
+        try {
+            checkAndGenerateRecurringVoucher(order);
+        } catch (Exception e) {
+            log.warn("Failed to generate recurring voucher for order {}: {}", order.getOrderCode(), e.getMessage());
+        }
+
         return mapToDTO(order);
     }
 
@@ -409,6 +442,26 @@ public class OrderServiceImpl implements OrderService {
     private String generateOrderCode() {
         return "ORD" + System.currentTimeMillis() +
             UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+    }
+
+    /**
+     * Kiểm tra đơn hàng có sản phẩm tiêu hao lớn (thức ăn, cát vệ sinh...) 
+     * để tạo voucher nhắc mua lại sau 25 ngày
+     */
+    private void checkAndGenerateRecurringVoucher(Order order) {
+        // Đơn hàng từ 500k trở lên mới tạo recurring voucher
+        BigDecimal minOrderForRecurring = BigDecimal.valueOf(500000);
+        if (order.getSubtotal().compareTo(minOrderForRecurring) < 0) {
+            return;
+        }
+
+        // Tìm sản phẩm có giá trị cao nhất trong đơn (đại diện sản phẩm chính)
+        String mainProductName = order.getItems().stream()
+            .max((a, b) -> a.getSubtotal().compareTo(b.getSubtotal()))
+            .map(OrderItem::getProductName)
+            .orElse("sản phẩm");
+
+        voucherService.generateRecurringVoucher(order.getUser().getId(), mainProductName);
     }
 
     private User getCurrentUser() {

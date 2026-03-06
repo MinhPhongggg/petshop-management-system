@@ -40,6 +40,10 @@ public class Pet {
     // Tuổi (tháng hoặc năm)
     private String age;
 
+    // Ngày sinh thú cưng (để gửi voucher sinh nhật)
+    @Column(name = "birthday")
+    private java.time.LocalDate birthday;
+
     // Ghi chú đặc biệt
     @Column(columnDefinition = "TEXT")
     private String notes;

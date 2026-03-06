@@ -23,4 +23,6 @@ public class PetRequest {
     private String notes;
     
     private String image;
+
+    private java.time.LocalDate birthday;
 }

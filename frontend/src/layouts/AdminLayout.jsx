@@ -13,6 +13,8 @@ import {
   FiBell,
   FiSearch,
   FiGrid,
+  FiBarChart2,
+  FiTag,
 } from 'react-icons/fi';
 import { MdPets, MdSpa } from 'react-icons/md';
 
@@ -24,13 +26,14 @@ const AdminLayout = () => {
   const { user, logout } = useAuthStore();
 
   const menuItems = [
-    { path: '/admin', icon: FiHome, label: 'Dashboard', exact: true },
+    { path: '/admin', icon: FiBarChart2, label: 'Thống kê & Báo cáo', exact: true },
     { path: '/admin/products', icon: FiPackage, label: 'Sản phẩm' },
     { path: '/admin/categories', icon: FiGrid, label: 'Danh mục' },
     { path: '/admin/sales', icon: FiShoppingCart, label: 'Đơn hàng' },
     { path: '/admin/bookings', icon: FiCalendar, label: 'Lịch đặt' },
     { path: '/admin/services', icon: MdSpa, label: 'Dịch vụ' },
     { path: '/admin/users', icon: FiUsers, label: 'Người dùng' },
+    { path: '/admin/vouchers', icon: FiTag, label: 'Voucher' },
   ];
 
   const isActive = (path, exact = false) => {
