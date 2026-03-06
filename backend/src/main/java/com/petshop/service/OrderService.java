@@ -29,4 +29,7 @@ public interface OrderService {
     
     // Cập nhật thanh toán
     OrderDTO updatePaymentStatus(Long id, Order.PaymentStatus status, String transactionId);
+
+    // Xoá đơn hàng (Admin)
+    void deleteOrder(Long id);
 }

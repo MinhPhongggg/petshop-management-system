@@ -145,6 +145,26 @@ export const ordersApi = {
   adminCancel: (id, reason) => api.post(`/orders/${id}/admin-cancel`, null, { params: { reason } }),
   updatePaymentStatus: (id, status, transactionId) => 
     api.post(`/orders/${id}/payment-status`, null, { params: { status, transactionId } }),
+  delete: (id) => api.delete(`/orders/${id}`),
+  updateStatus: (id, newStatus) => {
+    const status = String(newStatus || '').toUpperCase();
+    switch (status) {
+      case 'CONFIRMED':
+        return ordersApi.confirm(id);
+      case 'PROCESSING':
+        return ordersApi.process(id);
+      case 'SHIPPING':
+        return ordersApi.ship(id);
+      case 'DELIVERED':
+        return ordersApi.deliver(id);
+      case 'COMPLETED':
+        return ordersApi.complete(id);
+      case 'CANCELLED':
+        return ordersApi.adminCancel(id, 'Admin hủy đơn');
+      default:
+        return Promise.reject(new Error(`Unsupported order status: ${newStatus}`));
+    }
+  },
 };
 
 // Pets API

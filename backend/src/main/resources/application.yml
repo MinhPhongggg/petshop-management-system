@@ -3,9 +3,9 @@ spring:
     name: petshop-backend
   
   datasource:
-    url: jdbc:mysql://localhost:3306/petshop_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+    url: ${DB_URL:jdbc:mysql://localhost:3306/petshop_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:
@@ -26,7 +26,9 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: cGV0c2hvcC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tMjU2LWJpdHMtc2VjdXJl
+  # NOTE: JwtTokenProvider expects this secret to be BASE64 encoded.
+  # Provide JWT_SECRET as a base64 string in env. Default below is dev-only.
+  secret: ${JWT_SECRET:cGV0c2hvcC1kZXYtc2VjcmV0LWtleS1wbGVhc2UtY2hhbmdlLW1lLTEyMzQ1Ng==}
   expiration: 86400000 # 24 hours in milliseconds
 
 # Swagger/OpenAPI
