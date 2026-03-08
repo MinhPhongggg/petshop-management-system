@@ -1,6 +1,5 @@
 package com.petshop.dto.response;
 
-import com.petshop.dto.request.ProductImportDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

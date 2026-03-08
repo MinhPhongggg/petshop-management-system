@@ -275,25 +275,33 @@ const ContactPage = () => {
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Kết nối với chúng tôi</h3>
                 <div className="flex gap-4">
                   <a
-                    href="#"
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:bg-blue-700 transition-colors"
                   >
                     <FaFacebook className="text-xl" />
                   </a>
                   <a
-                    href="#"
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity"
                   >
                     <FaInstagram className="text-xl" />
                   </a>
                   <a
-                    href="#"
+                    href="https://youtube.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-12 h-12 bg-red-600 text-white rounded-xl flex items-center justify-center hover:bg-red-700 transition-colors"
                   >
                     <FaYoutube className="text-xl" />
                   </a>
                   <a
-                    href="#"
+                    href="https://tiktok.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center hover:bg-gray-800 transition-colors"
                   >
                     <FaTiktok className="text-xl" />

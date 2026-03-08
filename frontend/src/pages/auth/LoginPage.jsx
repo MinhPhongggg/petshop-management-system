@@ -9,7 +9,7 @@ import { useAuthStore } from '../../store/authStore';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading } = useAuthStore();
   
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,7 +34,7 @@ const LoginPage = () => {
 
     // BE expects username field, use email as username
     const result = await login({
-      username: formData.email,
+      username: formData.email.trim(),
       password: formData.password,
     });
     

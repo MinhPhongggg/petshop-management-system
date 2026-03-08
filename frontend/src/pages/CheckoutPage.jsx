@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCheck, FiMapPin, FiCreditCard, FiTruck } from 'react-icons/fi';
+import { FiMapPin, FiCreditCard, FiTruck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
@@ -9,10 +9,11 @@ import { ordersApi } from '../services/api';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const { items, getTotalPrice, clearCartLocal } = useCartStore();
-  const { user } = useAuthStore();
+  const { items, isLoading: isCartLoading, getTotalPrice, clearCartLocal, fetchCart } = useCartStore();
+  const { user, isAuthenticated } = useAuthStore();
   
   const [loading, setLoading] = useState(false);
+  const [hasFetchedCart, setHasFetchedCart] = useState(false);
   const [formData, setFormData] = useState({
     fullName: user?.fullName || '',
     phone: user?.phone || '',
@@ -24,6 +25,17 @@ const CheckoutPage = () => {
     notes: '',
     paymentMethod: 'COD',
   });
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/checkout' } });
+      return;
+    }
+    (async () => {
+      await fetchCart();
+      setHasFetchedCart(true);
+    })();
+  }, [isAuthenticated, navigate, fetchCart]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -40,29 +52,32 @@ const CheckoutPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.phone || !formData.address) {
+    if (!formData.fullName || !formData.phone || !formData.address) {
       toast.error('Vui lòng điền đầy đủ thông tin giao hàng');
       return;
     }
 
     setLoading(true);
     try {
+      const shippingAddressParts = [
+        formData.address,
+        formData.ward,
+        formData.district,
+        formData.city,
+      ].map((p) => (p || '').trim()).filter(Boolean);
+
       const orderData = {
-        shippingAddress: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
+        shippingAddress: shippingAddressParts.join(', '),
         receiverName: formData.fullName,
         receiverPhone: formData.phone,
         note: formData.notes,  // BE expects 'note' not 'notes'
-        paymentMethod: formData.paymentMethod,
-        items: items.map(item => ({
-          productId: item.productId || item.product?.id,
-          variantId: item.variantId || item.variant?.id,
-          quantity: item.quantity,
-        })),
+        paymentMethod: 'COD',
       };
 
-      const response = await ordersApi.create(orderData);
+      await ordersApi.create(orderData);
       
       clearCartLocal();
+      await fetchCart();
       toast.success('Đặt hàng thành công!');
       navigate(`/my-orders`);
     } catch (error) {
@@ -71,6 +86,18 @@ const CheckoutPage = () => {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated && (isCartLoading || !hasFetchedCart)) {
+    return (
+      <div className="min-h-screen bg-petshop-cream py-16">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-petshop-orange border-t-transparent"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -253,46 +280,6 @@ const CheckoutPage = () => {
                     </div>
                     <span className="text-2xl">💵</span>
                   </label>
-
-                  <label className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    formData.paymentMethod === 'BANKING'
-                      ? 'border-petshop-green bg-petshop-green/5'
-                      : 'border-gray-200 hover:border-petshop-green/50'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="BANKING"
-                      checked={formData.paymentMethod === 'BANKING'}
-                      onChange={handleChange}
-                      className="w-5 h-5 text-petshop-green"
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-800">Chuyển khoản ngân hàng</span>
-                      <p className="text-sm text-gray-500">Chuyển khoản qua tài khoản ngân hàng</p>
-                    </div>
-                    <span className="text-2xl">🏦</span>
-                  </label>
-
-                  <label className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    formData.paymentMethod === 'MOMO'
-                      ? 'border-petshop-green bg-petshop-green/5'
-                      : 'border-gray-200 hover:border-petshop-green/50'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="MOMO"
-                      checked={formData.paymentMethod === 'MOMO'}
-                      onChange={handleChange}
-                      className="w-5 h-5 text-petshop-green"
-                    />
-                    <div className="flex-1">
-                      <span className="font-medium text-gray-800">Ví MoMo</span>
-                      <p className="text-sm text-gray-500">Thanh toán qua ví điện tử MoMo</p>
-                    </div>
-                    <span className="text-2xl">📱</span>
-                  </label>
                 </div>
               </motion.div>
             </div>
@@ -312,25 +299,32 @@ const CheckoutPage = () => {
                 {/* Items */}
                 <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
                   {items.map((item) => (
+                    (() => {
+                      const productName = item.productName || item.product?.name;
+                      const productImage = item.productImage || item.product?.images?.[0]?.url || 'https://via.placeholder.com/60';
+                      const variantName = item.variantName || item.variant?.name;
+                      const unitPrice = item.currentPrice || item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice || 0;
+                      const lineTotal = (item.subtotal ?? unitPrice * item.quantity) || 0;
+                      return (
                     <div key={item.id} className="flex gap-3">
                       <img
-                        src={item.product?.images?.[0]?.url || 'https://via.placeholder.com/60'}
-                        alt={item.product?.name}
+                        src={productImage}
+                        alt={productName}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 line-clamp-2">
-                          {item.product?.name}
+                          {productName}
                         </p>
-                        {item.variant && (
-                          <p className="text-xs text-gray-500">{item.variant.name}</p>
-                        )}
+                        {variantName && <p className="text-xs text-gray-500">{variantName}</p>}
                         <p className="text-sm text-gray-500">x{item.quantity}</p>
                       </div>
                       <span className="text-sm font-semibold text-petshop-orange whitespace-nowrap">
-                        {formatPrice((item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice) * item.quantity)}
+                        {formatPrice(lineTotal)}
                       </span>
                     </div>
+                      );
+                    })()
                   ))}
                 </div>
 
@@ -365,10 +359,7 @@ const CheckoutPage = () => {
                 </button>
 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  Bằng việc đặt hàng, bạn đồng ý với{' '}
-                  <Link to="/terms" className="text-petshop-orange hover:underline">
-                    điều khoản sử dụng
-                  </Link>
+                  Hệ thống hiện hỗ trợ thanh toán khi nhận hàng (COD).
                 </p>
               </motion.div>
             </div>

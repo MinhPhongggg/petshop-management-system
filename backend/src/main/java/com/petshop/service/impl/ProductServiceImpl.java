@@ -9,7 +9,6 @@ import com.petshop.exception.BadRequestException;
 import com.petshop.exception.ResourceNotFoundException;
 import com.petshop.repository.*;
 import com.petshop.service.ProductService;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +29,6 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductVariantRepository productVariantRepository;
-    private final EntityManager entityManager;
     
     @Override
     @Transactional
@@ -145,32 +143,28 @@ public class ProductServiceImpl implements ProductService {
         
         // Thêm images mới
         if (request.getImages() != null) {
-            Product finalProduct = product;
-            request.getImages().forEach(imgReq -> {
-                ProductImage newImage = ProductImage.builder()
-                    .product(finalProduct)
+            for (var imgReq : request.getImages()) {
+                product.getImages().add(ProductImage.builder()
+                    .product(product)
                     .imageUrl(imgReq.getImageUrl())
                     .isPrimary(imgReq.isPrimary())
                     .sortOrder(imgReq.getSortOrder())
-                    .build();
-                finalProduct.getImages().add(newImage);
-            });
+                    .build());
+            }
         }
         
         // Thêm variants mới
         if (request.getVariants() != null) {
-            Product finalProduct2 = product;
-            request.getVariants().forEach(varReq -> {
-                ProductVariant newVariant = ProductVariant.builder()
-                    .product(finalProduct2)
+            for (var varReq : request.getVariants()) {
+                product.getVariants().add(ProductVariant.builder()
+                    .product(product)
                     .name(varReq.getName())
                     .sku(varReq.getSku())
                     .price(varReq.getPrice())
                     .stock(varReq.getStock())
                     .active(true)
-                    .build();
-                finalProduct2.getVariants().add(newVariant);
-            });
+                    .build());
+            }
         }
         
         product = productRepository.save(product);
@@ -266,7 +260,7 @@ public class ProductServiceImpl implements ProductService {
                 .map(img -> ProductImageDTO.builder()
                     .id(img.getId())
                     .imageUrl(img.getImageUrl())
-                    .isPrimary(img.isPrimary())
+                    .primary(img.isPrimary())
                     .sortOrder(img.getSortOrder())
                     .build())
                 .collect(Collectors.toList());

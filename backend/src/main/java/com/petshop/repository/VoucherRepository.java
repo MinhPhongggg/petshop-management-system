@@ -25,6 +25,5 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     
     // Tất cả voucher (admin)
     Page<Voucher> findAllByOrderByCreatedAtDesc(Pageable pageable);
-    
     boolean existsByCode(String code);
 }

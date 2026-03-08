@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: petshop-backend
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/petshop_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+
+jwt:
+  # Example only. Use a strong secret via environment variable in real deployments.
+  secret: CHANGE_ME_USE_STRONG_RANDOM_SECRET
+  expiration: 86400000
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    com.petshop: DEBUG
+    org.springframework.security: DEBUG
+
+petshop:
+  points:
+    earn-rate: 1000
+    redeem-value: 100
+  appointment:
+    slot-duration: 30
+    advance-booking-days: 30
+    min-booking-hours: 2

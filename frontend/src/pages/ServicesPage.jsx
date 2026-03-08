@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiClock, FiCheck, FiArrowRight } from 'react-icons/fi';
+import { FiCheck, FiArrowRight } from 'react-icons/fi';
 import ServiceCard from '../components/service/ServiceCard';
 import { servicesApi } from '../services/api';
 

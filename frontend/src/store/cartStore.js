@@ -23,9 +23,13 @@ export const useCartStore = create(
       // Add item to cart
       addItem: async (product, variant, quantity = 1) => {
         try {
+          if (!variant?.id) {
+            toast.error('Vui lòng chọn phân loại sản phẩm');
+            return;
+          }
+
           const response = await cartApi.add({
-            productId: product.id,
-            variantId: variant?.id,
+            variantId: variant.id,
             quantity,
           });
           
@@ -141,7 +145,7 @@ export const useCartStore = create(
 
       get totalPrice() {
         return get().items.reduce((total, item) => {
-          const price = item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice || 0;
+          const price = item.currentPrice || item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice || 0;
           return total + price * item.quantity;
         }, 0);
       },
@@ -152,7 +156,7 @@ export const useCartStore = create(
 
       getTotalPrice: () => {
         return get().items.reduce((total, item) => {
-          const price = item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice || 0;
+          const price = item.currentPrice || item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice || 0;
           return total + price * item.quantity;
         }, 0);
       },

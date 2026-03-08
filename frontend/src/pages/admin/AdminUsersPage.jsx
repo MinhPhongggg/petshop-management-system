@@ -12,6 +12,7 @@ const AdminUsersPage = () => {
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter]);
 
   const fetchUsers = async () => {

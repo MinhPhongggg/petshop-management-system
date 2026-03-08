@@ -30,6 +30,7 @@ const AdminReviewsPage = () => {
 
   useEffect(() => {
     fetchReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.page, ratingFilter, statusFilter]);
 
   const fetchReviews = async () => {

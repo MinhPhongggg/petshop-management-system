@@ -6,7 +6,6 @@ import com.petshop.entity.Order;
 import com.petshop.repository.*;
 import com.petshop.service.DashboardService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,7 +24,6 @@ public class DashboardServiceImpl implements DashboardService {
     private final BookingRepository bookingRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final ProductVariantRepository productVariantRepository;
     
     @Override
     public DashboardDTO getDashboard() {

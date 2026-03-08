@@ -55,8 +55,17 @@ public class ProductRequest {
         @NotBlank(message = "URL ảnh là bắt buộc")
         private String imageUrl;
         
-        private boolean isPrimary = false;
+        private boolean primary = false;
         
         private int sortOrder = 0;
+        
+        // Jackson will use this for JSON key "isPrimary"
+        public boolean isPrimary() {
+            return primary;
+        }
+        
+        public void setIsPrimary(boolean isPrimary) {
+            this.primary = isPrimary;
+        }
     }
 }

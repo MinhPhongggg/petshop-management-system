@@ -7,7 +7,6 @@ import {
   FiShoppingCart,
   FiCalendar,
   FiUsers,
-  FiSettings,
   FiMenu,
   FiX,
   FiLogOut,

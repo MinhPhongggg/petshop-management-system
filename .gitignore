@@ -11,5 +11,18 @@ backend/target/
 # Bỏ qua file log và build
 dist/
 build/
+frontend/build/
+backend/target/
+backend/.classpath
+backend/.project
+backend/.settings/
+frontend/.env
+.idea/
+.vscode/
+*.iml
 *.log
 .DS_Store
+
+# Workspace accidentally nested inside itself
+petshop-management-system/
+/target/

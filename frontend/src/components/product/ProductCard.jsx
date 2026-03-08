@@ -6,13 +6,18 @@ import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 
 const ProductCard = ({ product }) => {
-  const { addItemLocal } = useCartStore();
+  const { addItem, addItemLocal } = useCartStore();
   const { isAuthenticated } = useAuthStore();
 
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    addItemLocal(product, product.variants?.[0], 1);
+    const firstVariant = product.variants?.[0];
+    if (isAuthenticated) {
+      addItem(product, firstVariant, 1);
+    } else {
+      addItemLocal(product, firstVariant, 1);
+    }
   };
 
   // Get display price - use minPrice from BE or fallback to basePrice

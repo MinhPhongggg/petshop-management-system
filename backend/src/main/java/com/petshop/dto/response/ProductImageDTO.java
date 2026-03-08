@@ -1,5 +1,6 @@
 package com.petshop.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +14,14 @@ public class ProductImageDTO {
     
     private Long id;
     private String imageUrl;
-    private boolean isPrimary;
+    
+    @JsonProperty("isPrimary")
+    private boolean primary;
+    
     private int sortOrder;
+    
+    // For compatibility with existing code
+    public boolean isPrimary() {
+        return primary;
+    }
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FiPackage, FiShoppingCart, FiUsers, FiCalendar, 
-  FiTrendingUp, FiTrendingDown, FiDollarSign, FiEye 
+  FiTrendingUp, FiTrendingDown, FiDollarSign 
 } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import { Link } from 'react-router-dom';

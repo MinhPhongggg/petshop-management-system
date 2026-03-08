@@ -47,6 +47,7 @@ public class ProductImportDTO {
     // Validation errors
     private String errorMessage;
     
+    @Builder.Default
     private boolean valid = true;
     
     public void addError(String error) {
