@@ -23,7 +23,16 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDTO createCategory(CategoryRequest request) {
-        String slug = generateSlug(request.getName());
+        Category parent = null;
+        if (request.getParentId() != null) {
+            parent = categoryRepository.findById(request.getParentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục cha không tồn tại"));
+            if (parent.getLevel() >= 2) {
+                throw new BadRequestException("Danh mục chỉ hỗ trợ tối đa 3 cấp");
+            }
+        }
+        
+        String slug = generateFullSlug(request.getName(), parent);
         if (categoryRepository.existsBySlug(slug)) {
             throw new BadRequestException("Slug đã tồn tại");
         }
@@ -42,9 +51,7 @@ public class CategoryServiceImpl implements CategoryService {
             category.setPetType(Category.PetType.valueOf(request.getPetType().toUpperCase()));
         }
         
-        if (request.getParentId() != null) {
-            Category parent = categoryRepository.findById(request.getParentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Danh mục cha không tồn tại"));
+        if (parent != null) {
             category.setParent(parent);
         }
         
@@ -58,7 +65,25 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
         
-        String slug = generateSlug(request.getName());
+        // Xác định parent mới
+        Category newParent = null;
+        if (request.getParentId() != null) {
+            if (request.getParentId().equals(id)) {
+                throw new BadRequestException("Không thể đặt danh mục làm cha của chính nó");
+            }
+            if (isDescendant(category, request.getParentId())) {
+                throw new BadRequestException("Không thể đặt danh mục con làm cha");
+            }
+            newParent = categoryRepository.findById(request.getParentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục cha không tồn tại"));
+            int newLevel = newParent.getLevel() + 1;
+            int maxChildDepth = getMaxChildDepth(category);
+            if (newLevel + maxChildDepth > 2) {
+                throw new BadRequestException("Danh mục chỉ hỗ trợ tối đa 3 cấp");
+            }
+        }
+        
+        String slug = generateFullSlug(request.getName(), newParent);
         if (!category.getSlug().equals(slug) && categoryRepository.existsBySlug(slug)) {
             throw new BadRequestException("Slug đã tồn tại");
         }
@@ -80,13 +105,8 @@ public class CategoryServiceImpl implements CategoryService {
             category.setActive(request.getActive());
         }
         
-        if (request.getParentId() != null) {
-            if (request.getParentId().equals(id)) {
-                throw new BadRequestException("Không thể đặt danh mục làm cha của chính nó");
-            }
-            Category parent = categoryRepository.findById(request.getParentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Danh mục cha không tồn tại"));
-            category.setParent(parent);
+        if (newParent != null) {
+            category.setParent(newParent);
         } else {
             category.setParent(null);
         }
@@ -149,6 +169,13 @@ public class CategoryServiceImpl implements CategoryService {
     }
     
     @Override
+    public List<CategoryDTO> getAdminCategoryTree() {
+        return categoryRepository.findByParentIsNullOrderByDisplayOrderAsc().stream()
+            .map(this::mapToDTOWithAllChildren)
+            .collect(Collectors.toList());
+    }
+    
+    @Override
     public List<CategoryDTO> getCategoriesByPetType(String petType) {
         Category.PetType type = Category.PetType.valueOf(petType.toUpperCase());
         return categoryRepository.findByPetTypeAndActiveIsTrueOrderByDisplayOrderAsc(type).stream()
@@ -171,6 +198,47 @@ public class CategoryServiceImpl implements CategoryService {
             .replaceAll("^-|-$", "");
     }
     
+    private String generateFullSlug(String name, Category parent) {
+        String baseSlug = generateSlug(name);
+        if (parent == null) {
+            return baseSlug;
+        }
+        // Lấy slug gốc (root) của cây cha
+        String parentSlug = generateSlug(getRootAncestor(parent).getName());
+        if (parent.getParent() != null) {
+            // parent ở level 1 → slug = root-parent-name
+            parentSlug = parentSlug + "-" + generateSlug(parent.getName());
+        }
+        return parentSlug + "-" + baseSlug;
+    }
+    
+    private Category getRootAncestor(Category category) {
+        Category current = category;
+        while (current.getParent() != null) {
+            current = current.getParent();
+        }
+        return current;
+    }
+    
+    private boolean isDescendant(Category category, Long targetId) {
+        if (category.getChildren() == null) return false;
+        for (Category child : category.getChildren()) {
+            if (child.getId().equals(targetId)) return true;
+            if (isDescendant(child, targetId)) return true;
+        }
+        return false;
+    }
+    
+    private int getMaxChildDepth(Category category) {
+        if (category.getChildren() == null || category.getChildren().isEmpty()) return 0;
+        int max = 0;
+        for (Category child : category.getChildren()) {
+            max = Math.max(max, 1 + getMaxChildDepth(child));
+        }
+        return max;
+    }
+    
+    
     private CategoryDTO mapToDTO(Category category) {
         return CategoryDTO.builder()
             .id(category.getId())
@@ -181,6 +249,8 @@ public class CategoryServiceImpl implements CategoryService {
             .petType(category.getPetType())
             .parentId(category.getParent() != null ? category.getParent().getId() : null)
             .parentName(category.getParent() != null ? category.getParent().getName() : null)
+            .level(category.getLevel())
+            .fullPath(category.getFullPath())
             .active(category.getActive())
             .displayOrder(category.getDisplayOrder())
             .productCount(category.getProducts() != null ? category.getProducts().size() : 0)
@@ -195,6 +265,23 @@ public class CategoryServiceImpl implements CategoryService {
                 category.getChildren().stream()
                     .filter(Category::getActive)
                     .map(this::mapToDTOWithChildren)
+                    .collect(Collectors.toList())
+            );
+        }
+        return dto;
+    }
+    
+    private CategoryDTO mapToDTOWithAllChildren(Category category) {
+        CategoryDTO dto = mapToDTO(category);
+        if (category.getChildren() != null && !category.getChildren().isEmpty()) {
+            dto.setChildren(
+                category.getChildren().stream()
+                    .sorted((a, b) -> {
+                        int orderA = a.getDisplayOrder() != null ? a.getDisplayOrder() : 0;
+                        int orderB = b.getDisplayOrder() != null ? b.getDisplayOrder() : 0;
+                        return Integer.compare(orderA, orderB);
+                    })
+                    .map(this::mapToDTOWithAllChildren)
                     .collect(Collectors.toList())
             );
         }

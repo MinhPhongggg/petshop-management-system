@@ -30,6 +30,12 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getCategoryTree());
     }
     
+    @GetMapping("/admin/tree")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<CategoryDTO>> getAdminCategoryTree() {
+        return ResponseEntity.ok(categoryService.getAdminCategoryTree());
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.ok(categoryService.getCategoryById(id));

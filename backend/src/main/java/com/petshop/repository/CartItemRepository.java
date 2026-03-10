@@ -21,4 +21,9 @@ public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     void deleteByUserId(Long userId);
     
     Long countByUserId(Long userId);
+    
+    // Xóa cart items theo danh sách variant IDs (khi xóa sản phẩm)
+    @Modifying
+    @Query("DELETE FROM CartItem c WHERE c.variant.id IN :variantIds")
+    void deleteByVariantIdIn(List<Long> variantIds);
 }

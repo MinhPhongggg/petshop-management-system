@@ -19,5 +19,6 @@ public interface CategoryService {
     List<CategoryDTO> getRootCategories();
     List<CategoryDTO> getChildCategories(Long parentId);
     List<CategoryDTO> getCategoryTree();
+    List<CategoryDTO> getAdminCategoryTree();
     List<CategoryDTO> getCategoriesByPetType(String petType);
 }

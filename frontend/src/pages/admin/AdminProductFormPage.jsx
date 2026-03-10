@@ -182,16 +182,18 @@ const AdminProductFormPage = () => {
     }
   };
 
-  // Flatten categories for display
+  // Flatten categories for display - only leaf categories are selectable
   const flattenCategories = (cats, level = 0) => {
     let result = [];
     cats.forEach(cat => {
+      const hasChildren = cat.children && cat.children.length > 0;
       result.push({
         ...cat,
         level,
+        isLeaf: !hasChildren,
         displayName: level > 0 ? `${'  '.repeat(level)}└ ${cat.name}` : cat.name,
       });
-      if (cat.children && cat.children.length > 0) {
+      if (hasChildren) {
         result = [...result, ...flattenCategories(cat.children, level + 1)];
       }
     });
@@ -388,8 +390,13 @@ const AdminProductFormPage = () => {
               >
                 <option value="">-- Chọn danh mục --</option>
                 {flattenedCategories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.displayName}
+                  <option 
+                    key={cat.id} 
+                    value={cat.id}
+                    disabled={!cat.isLeaf}
+                    className={!cat.isLeaf ? 'font-semibold text-gray-400' : ''}
+                  >
+                    {cat.displayName}{!cat.isLeaf ? ' (nhóm)' : ''}
                   </option>
                 ))}
               </select>

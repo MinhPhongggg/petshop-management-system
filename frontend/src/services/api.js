@@ -37,8 +37,12 @@ api.interceptors.response.use(
 
       // Token expired or invalid (avoid redirect loops on login/register)
       if (!isAuthEndpoint) {
-        useAuthStore.getState().logout();
-        window.location.href = '/login';
+        const store = useAuthStore.getState();
+        // Only logout if we were previously authenticated (avoid loop on fresh load)
+        if (store.isAuthenticated) {
+          store.logout();
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -70,12 +74,14 @@ export const productsApi = {
   create: (data) => api.post('/products', data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
+  toggleActive: (id) => api.patch(`/products/${id}/toggle-active`),
 };
 
 // Categories API
 export const categoriesApi = {
   getAll: () => api.get('/categories'),
   getTree: () => api.get('/categories/tree'),
+  getAdminTree: () => api.get('/categories/admin/tree'),
   getById: (id) => api.get(`/categories/${id}`),
   getBySlug: (slug) => api.get(`/categories/slug/${slug}`),
   getByPetType: (petType) => api.get(`/categories/pet-type/${petType}`),

@@ -29,6 +29,9 @@ public class ProductServiceImpl implements ProductService {
     private final BrandRepository brandRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductVariantRepository productVariantRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final CartItemRepository cartItemRepository;
+    private final StockMovementRepository stockMovementRepository;
     
     @Override
     @Transactional
@@ -39,6 +42,11 @@ public class ProductServiceImpl implements ProductService {
         
         Category category = categoryRepository.findById(request.getCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
+        
+        // Validate: chỉ cho phép gán sản phẩm vào danh mục lá (không có danh mục con)
+        if (categoryRepository.existsByParentId(category.getId())) {
+            throw new BadRequestException("Sản phẩm chỉ có thể gán vào danh mục lá (không có danh mục con)");
+        }
         
         Brand brand = null;
         if (request.getBrandId() != null) {
@@ -112,6 +120,12 @@ public class ProductServiceImpl implements ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
         
+        // Validate: chỉ kiểm tra danh mục lá khi thay đổi danh mục
+        boolean categoryChanged = !product.getCategory().getId().equals(request.getCategoryId());
+        if (categoryChanged && categoryRepository.existsByParentId(category.getId())) {
+            throw new BadRequestException("Sản phẩm chỉ có thể gán vào danh mục lá (không có danh mục con)");
+        }
+        
         Brand brand = null;
         if (request.getBrandId() != null) {
             brand = brandRepository.findById(request.getBrandId())
@@ -173,12 +187,36 @@ public class ProductServiceImpl implements ProductService {
     
     @Override
     @Transactional
-    public void deleteProduct(Long id) {
+    public String deleteProduct(Long id) {
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại"));
         
-        // Hard delete - xóa thực sự khỏi database
-        productRepository.delete(product);
+        List<Long> variantIds = product.getVariants().stream()
+            .map(ProductVariant::getId)
+            .collect(Collectors.toList());
+        
+        // Luôn xóa cart items có liên quan
+        if (!variantIds.isEmpty()) {
+            cartItemRepository.deleteByVariantIdIn(variantIds);
+        }
+        
+        // Kiểm tra sản phẩm có trong đơn hàng không
+        boolean hasOrders = !variantIds.isEmpty() && orderItemRepository.existsByVariantIdIn(variantIds);
+        
+        if (hasOrders) {
+            // Soft delete - ẩn sản phẩm thay vì xóa (giữ lịch sử đơn hàng)
+            product.setActive(false);
+            product.getVariants().forEach(v -> v.setActive(false));
+            productRepository.save(product);
+            return "Sản phẩm đã được ẩn do có đơn hàng liên quan";
+        } else {
+            // Hard delete - không có đơn hàng liên quan, xóa thực sự
+            if (!variantIds.isEmpty()) {
+                stockMovementRepository.deleteByVariantIdIn(variantIds);
+            }
+            productRepository.delete(product);
+            return "Đã xóa sản phẩm";
+        }
     }
     
     @Override
@@ -194,15 +232,25 @@ public class ProductServiceImpl implements ProductService {
             .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại"));
         return mapToDTO(product);
     }
-    
+    @Override
+    @Transactional
+    public ProductDTO toggleActive(Long id) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("S\u1ea3n ph\u1ea9m kh\u00f4ng t\u1ed3n t\u1ea1i"));
+        product.setActive(!product.isActive());
+        return mapToDTO(productRepository.save(product));
+    }    
     @Override
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
         return productRepository.findByActiveIsTrue(pageable).map(this::mapToDTO);
     }
     
     @Override
-    public Page<ProductDTO> getAllProductsAdmin(Pageable pageable) {
-        // Admin có thể xem tất cả sản phẩm (bao gồm inactive)
+    public Page<ProductDTO> getAllProductsAdmin(Long categoryId, Pageable pageable) {
+        if (categoryId != null) {
+            List<Long> categoryIds = getAllDescendantCategoryIds(categoryId);
+            return productRepository.findByCategoryIdIn(categoryIds, pageable).map(this::mapToDTO);
+        }
         return productRepository.findAll(pageable).map(this::mapToDTO);
     }
     
@@ -215,13 +263,15 @@ public class ProductServiceImpl implements ProductService {
     public Page<ProductDTO> filterProducts(Long categoryId, Long brandId, 
                                            BigDecimal minPrice, BigDecimal maxPrice, 
                                            Pageable pageable) {
-        return productRepository.filterProducts(categoryId, brandId, minPrice, maxPrice, pageable)
+        List<Long> categoryIds = categoryId != null ? getAllDescendantCategoryIds(categoryId) : null;
+        return productRepository.filterProducts(categoryIds, brandId, minPrice, maxPrice, pageable)
             .map(this::mapToDTO);
     }
     
     @Override
     public Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
-        return productRepository.findByCategoryIdAndActiveIsTrue(categoryId, pageable)
+        List<Long> categoryIds = getAllDescendantCategoryIds(categoryId);
+        return productRepository.findByCategoryIdInAndActiveIsTrue(categoryIds, pageable)
             .map(this::mapToDTO);
     }
     
@@ -250,6 +300,33 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.findNewProducts(Pageable.ofSize(limit)).stream()
             .map(this::mapToDTO)
             .collect(Collectors.toList());
+    }
+    
+    private Category getRootCategory(Category category) {
+        Category current = category;
+        while (current.getParent() != null) {
+            current = current.getParent();
+        }
+        return current;
+    }
+    
+    /**
+     * Lấy tất cả ID danh mục con (bao gồm cả chính nó)
+     * VD: Chọn "Chó" → trả về [Chó, Thức ăn cho chó, Thức ăn hạt, Thức ăn ướt, ...]
+     */
+    private List<Long> getAllDescendantCategoryIds(Long categoryId) {
+        List<Long> ids = new ArrayList<>();
+        ids.add(categoryId);
+        collectChildCategoryIds(categoryId, ids);
+        return ids;
+    }
+    
+    private void collectChildCategoryIds(Long parentId, List<Long> ids) {
+        List<Category> children = categoryRepository.findAllByParentId(parentId);
+        for (Category child : children) {
+            ids.add(child.getId());
+            collectChildCategoryIds(child.getId(), ids);
+        }
     }
     
     private ProductDTO mapToDTO(Product product) {
@@ -314,7 +391,8 @@ public class ProductServiceImpl implements ProductService {
             .shortDescription(product.getShortDescription())
             .categoryId(product.getCategory().getId())
             .categoryName(product.getCategory().getName())
-            .petType(product.getCategory().getPetType())
+            .categoryPath(product.getCategory().getFullPath())
+            .petType(getRootCategory(product.getCategory()).getPetType())
             .brandId(product.getBrand() != null ? product.getBrand().getId() : null)
             .brandName(product.getBrand() != null ? product.getBrand().getName() : null)
             .primaryImage(primaryImage)
