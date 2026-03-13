@@ -28,7 +28,7 @@ const AdminLayout = () => {
     { path: "/admin", icon: FiHome, label: "Dashboard", exact: true },
     { path: "/admin/products", icon: FiPackage, label: "Sản phẩm" },
     { path: "/admin/categories", icon: FiGrid, label: "Danh mục" },
-    { path: "/admin/orders", icon: FiShoppingCart, label: "Đơn hàng" },
+    { path: "/admin/sales", icon: FiShoppingCart, label: "Đơn hàng" },
     { path: "/admin/bookings", icon: FiCalendar, label: "Lịch đặt" },
     { path: "/admin/services", icon: MdSpa, label: "Dịch vụ" },
     { path: "/admin/users", icon: FiUsers, label: "Người dùng" },
@@ -64,7 +64,7 @@ const AdminLayout = () => {
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b">
-          <Link to="/admin" className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-petshop-orange to-petshop-yellow rounded-xl flex items-center justify-center">
               <MdPets className="text-white text-2xl" />
             </div>

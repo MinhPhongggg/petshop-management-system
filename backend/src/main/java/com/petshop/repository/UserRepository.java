@@ -1,6 +1,8 @@
 package com.petshop.repository;
 
 import com.petshop.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     
     boolean existsByPhone(String phone);
+
+    Page<User> findByRole(User.Role role, Pageable pageable);
     
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = 'CUSTOMER'")
     long countCustomers();

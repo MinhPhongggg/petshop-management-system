@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiSearch, FiEdit2, FiTrash2, FiUserCheck, FiUserX, FiMail, FiPhone } from 'react-icons/fi';
+import { FiSearch, FiEdit2, FiTrash2, FiUserCheck, FiUserX, FiMail, FiPhone, FiX, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { usersApi } from '../../services/api';
 
@@ -9,16 +9,29 @@ const AdminUsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [editRoleUserId, setEditRoleUserId] = useState(null);
+  const [pagination, setPagination] = useState({ page: 0, totalPages: 1, totalElements: 0 });
 
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleFilter]);
+  }, [roleFilter, pagination.page]);
 
   const fetchUsers = async () => {
     try {
-      const response = await usersApi.getAll({ role: roleFilter });
-      setUsers(response.data.content || response.data);
+      setLoading(true);
+      const response = await usersApi.getAll({
+        role: roleFilter || undefined,
+        page: pagination.page,
+        size: 20,
+      });
+      const data = response.data;
+      setUsers(data.content || data);
+      setPagination(prev => ({
+        ...prev,
+        totalPages: data.totalPages || 1,
+        totalElements: data.totalElements || (data.content || data).length,
+      }));
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Không thể tải danh sách người dùng');
@@ -27,21 +40,31 @@ const AdminUsersPage = () => {
     }
   };
 
-  const handleToggleStatus = async (userId, currentStatus) => {
-    const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  const handleToggleStatus = async (userId, currentActive) => {
     try {
-      // API call would go here
-      toast.success(`Đã ${newStatus === 'ACTIVE' ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản`);
+      await usersApi.updateStatus(userId, !currentActive);
+      toast.success(`Đã ${!currentActive ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản`);
       fetchUsers();
     } catch (error) {
       toast.error('Không thể cập nhật trạng thái');
     }
   };
 
+  const handleChangeRole = async (userId, newRole) => {
+    try {
+      await usersApi.updateRole(userId, newRole);
+      toast.success('Đã cập nhật vai trò người dùng');
+      setEditRoleUserId(null);
+      fetchUsers();
+    } catch (error) {
+      toast.error('Không thể cập nhật vai trò');
+    }
+  };
+
   const handleDelete = async (userId) => {
     if (window.confirm('Bạn có chắc muốn xóa người dùng này?')) {
       try {
-        // API call would go here
+        await usersApi.delete(userId);
         toast.success('Đã xóa người dùng');
         fetchUsers();
       } catch (error) {
@@ -64,18 +87,17 @@ const AdminUsersPage = () => {
     );
   };
 
-  const getStatusBadge = (status) => {
-    if (status === 'ACTIVE') {
+  const getStatusBadge = (active) => {
+    if (active) {
       return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">Hoạt động</span>;
     }
     return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Vô hiệu</span>;
   };
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = !roleFilter || user.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesSearch = (user.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
   if (loading) {
@@ -122,7 +144,7 @@ const AdminUsersPage = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <p className="text-gray-500 text-sm">Tổng người dùng</p>
-          <p className="text-2xl font-bold text-gray-800">{users.length}</p>
+          <p className="text-2xl font-bold text-gray-800">{pagination.totalElements || users.length}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <p className="text-gray-500 text-sm">Khách hàng</p>
@@ -134,7 +156,7 @@ const AdminUsersPage = () => {
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <p className="text-gray-500 text-sm">Hoạt động</p>
-          <p className="text-2xl font-bold text-petshop-orange">{users.filter(u => u.status === 'ACTIVE').length}</p>
+          <p className="text-2xl font-bold text-petshop-orange">{users.filter(u => u.active).length}</p>
         </div>
       </div>
 
@@ -183,26 +205,50 @@ const AdminUsersPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
-                  <td className="px-6 py-4 text-gray-600">{user.ordersCount}</td>
-                  <td className="px-6 py-4">{getStatusBadge(user.status)}</td>
+                  <td className="px-6 py-4 text-gray-600">{user.ordersCount ?? user.orderCount ?? 0}</td>
+                  <td className="px-6 py-4">{getStatusBadge(user.active)}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => handleToggleStatus(user.id, user.status)}
+                        onClick={() => handleToggleStatus(user.id, user.active)}
                         className={`p-2 rounded-lg ${
-                          user.status === 'ACTIVE' 
+                          user.active
                             ? 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                             : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
                         }`}
-                        title={user.status === 'ACTIVE' ? 'Vô hiệu hóa' : 'Kích hoạt'}
+                        title={user.active ? 'Vô hiệu hóa' : 'Kích hoạt'}
                       >
-                        {user.status === 'ACTIVE' ? <FiUserX /> : <FiUserCheck />}
+                        {user.active ? <FiUserX /> : <FiUserCheck />}
                       </button>
-                      <button
-                        className="p-2 text-gray-500 hover:text-petshop-orange hover:bg-orange-50 rounded-lg"
-                      >
-                        <FiEdit2 />
-                      </button>
+                      {user.role !== 'ADMIN' && (
+                        editRoleUserId === user.id ? (
+                          <div className="flex items-center gap-1">
+                            <select
+                              defaultValue={user.role}
+                              onChange={(e) => handleChangeRole(user.id, e.target.value)}
+                              className="text-xs border rounded px-1 py-1"
+                              autoFocus
+                            >
+                              <option value="CUSTOMER">Khách hàng</option>
+                              <option value="STAFF">Nhân viên</option>
+                            </select>
+                            <button
+                              onClick={() => setEditRoleUserId(null)}
+                              className="p-1 text-gray-400 hover:text-gray-600"
+                            >
+                              <FiX className="text-xs" />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setEditRoleUserId(user.id)}
+                            className="p-2 text-gray-500 hover:text-petshop-orange hover:bg-orange-50 rounded-lg"
+                            title="Đổi vai trò"
+                          >
+                            <FiEdit2 />
+                          </button>
+                        )
+                      )}
                       {user.role !== 'ADMIN' && (
                         <button
                           onClick={() => handleDelete(user.id)}

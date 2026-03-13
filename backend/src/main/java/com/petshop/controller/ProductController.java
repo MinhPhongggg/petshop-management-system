@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -95,8 +96,9 @@ public class ProductController {
     @GetMapping("/admin/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<Page<ProductDTO>> getAllProductsAdmin(
+            @RequestParam(required = false) Long categoryId,
             @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProductsAdmin(pageable));
+        return ResponseEntity.ok(productService.getAllProductsAdmin(categoryId, pageable));
     }
     
     @PostMapping
@@ -114,8 +116,14 @@ public class ProductController {
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Map<String, String>> deleteProduct(@PathVariable Long id) {
+        String message = productService.deleteProduct(id);
+        return ResponseEntity.ok(Map.of("message", message));
+    }
+
+    @PatchMapping("/{id}/toggle-active")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
+    public ResponseEntity<ProductDTO> toggleActive(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.toggleActive(id));
     }
 }

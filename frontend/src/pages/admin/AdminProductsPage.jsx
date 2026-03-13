@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiEye, FiUpload, FiDownload, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiEye, FiEyeOff, FiUpload, FiDownload, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { productsApi, categoriesApi, importApi } from '../../services/api';
 
@@ -63,11 +63,12 @@ const AdminProductsPage = () => {
   const handleDelete = async (productId) => {
     if (window.confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
       try {
-        await productsApi.delete(productId);
-        toast.success('Đã xóa sản phẩm');
+        const response = await productsApi.delete(productId);
+        toast.success(response.data?.message || 'Đã xóa sản phẩm');
         fetchData();
       } catch (error) {
-        toast.error('Không thể xóa sản phẩm');
+        const message = error.response?.data?.message || 'Không thể xóa sản phẩm';
+        toast.error(message);
       }
     }
   };
@@ -79,14 +80,24 @@ const AdminProductsPage = () => {
     }).format(price);
   };
 
-  const getStatusBadge = (status, stock) => {
-    if (stock === 0 || status === 'OUT_OF_STOCK') {
+  const getStatusBadge = (active, totalStock) => {
+    if (!active) {
+      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Ẩn</span>;
+    }
+    if (totalStock === 0) {
       return <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-600">Hết hàng</span>;
     }
-    if (status === 'ACTIVE') {
-      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">Đang bán</span>;
+    return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-600">Đang bán</span>;
+  };
+
+  const handleToggleActive = async (product) => {
+    try {
+      await productsApi.toggleActive(product.id);
+      toast.success(product.active ? 'Đã ẩn sản phẩm' : 'Đã hiện sản phẩm');
+      fetchData();
+    } catch (error) {
+      toast.error('Không thể cập nhật trạng thái sản phẩm');
     }
-    return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Ẩn</span>;
   };
 
   const filteredProducts = products.filter(product =>
@@ -238,40 +249,42 @@ const AdminProductsPage = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={product.image}
+                        src={product.primaryImage || '/images/placeholder.png'}
                         alt={product.name}
-                        className="w-12 h-12 rounded-lg object-cover"
+                        className="w-12 h-12 rounded-lg object-cover bg-gray-100"
+                        onError={(e) => { e.target.src = '/images/placeholder.png'; }}
                       />
                       <span className="font-medium text-gray-800">{product.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{product.category}</td>
+                  <td className="px-6 py-4 text-gray-600">{product.categoryName}</td>
                   <td className="px-6 py-4">
-                    {product.salePrice ? (
+                    {product.hasDiscount ? (
                       <div>
-                        <span className="font-medium text-petshop-orange">{formatPrice(product.salePrice)}</span>
-                        <span className="text-sm text-gray-400 line-through ml-2">{formatPrice(product.price)}</span>
+                        <span className="font-medium text-petshop-orange">{formatPrice(product.minPrice)}</span>
+                        <span className="text-sm text-gray-400 line-through ml-2">{formatPrice(product.basePrice)}</span>
                       </div>
                     ) : (
-                      <span className="font-medium text-gray-800">{formatPrice(product.price)}</span>
+                      <span className="font-medium text-gray-800">{formatPrice(product.basePrice)}</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={product.stock < 10 ? 'text-red-500 font-medium' : 'text-gray-600'}>
-                      {product.stock}
+                    <span className={product.totalStock < 10 ? 'text-red-500 font-medium' : 'text-gray-600'}>
+                      {product.totalStock}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {getStatusBadge(product.status, product.stock)}
+                    {getStatusBadge(product.active, product.totalStock)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <Link
-                        to={`/products/${product.id}`}
-                        className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg"
+                      <button
+                        onClick={() => handleToggleActive(product)}
+                        className={`p-2 rounded-lg ${product.active ? 'text-green-500 hover:text-gray-500 hover:bg-gray-50' : 'text-gray-400 hover:text-green-500 hover:bg-green-50'}`}
+                        title={product.active ? 'Ẩn sản phẩm' : 'Hiện sản phẩm'}
                       >
-                        <FiEye />
-                      </Link>
+                        {product.active ? <FiEye /> : <FiEyeOff />}
+                      </button>
                       <Link
                         to={`/admin/products/${product.id}/edit`}
                         className="p-2 text-gray-500 hover:text-petshop-orange hover:bg-orange-50 rounded-lg"

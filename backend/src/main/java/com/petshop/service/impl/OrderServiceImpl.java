@@ -358,6 +358,21 @@ public class OrderServiceImpl implements OrderService {
         return mapToDTO(order);
     }
 
+    @Override
+    @Transactional
+    public void deleteOrder(Long id) {
+        Order order = getOrderEntity(id);
+
+        // Nếu đơn hàng chưa giao/hoàn thành và chưa bị hủy, cần hoàn lại tồn kho
+        if (order.getStatus() != Order.OrderStatus.CANCELLED &&
+            order.getStatus() != Order.OrderStatus.DELIVERED &&
+            order.getStatus() != Order.OrderStatus.COMPLETED) {
+            restoreStock(order);
+        }
+
+        orderRepository.delete(order);
+    }
+
     private Order getOrderEntity(Long id) {
         return orderRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Đơn hàng không tồn tại"));

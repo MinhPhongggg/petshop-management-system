@@ -21,6 +21,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     // Lấy danh mục gốc (không có parent)
     List<Category> findByParentIsNullAndActiveIsTrueOrderByDisplayOrderAsc();
     
+    // Lấy tất cả danh mục gốc (bao gồm cả inactive - cho admin)
+    List<Category> findByParentIsNullOrderByDisplayOrderAsc();
+    
     // Lấy danh mục con theo parent
     List<Category> findByParentIdAndActiveIsTrueOrderByDisplayOrderAsc(Long parentId);
     
@@ -36,4 +39,10 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     
     // Tìm tất cả danh mục theo tên (để xử lý trùng tên)
     List<Category> findAllByNameIgnoreCase(String name);
+    
+    // Kiểm tra danh mục có con không (để xác định danh mục lá)
+    boolean existsByParentId(Long parentId);
+    
+    // Lấy tất cả danh mục con theo parent ID
+    List<Category> findAllByParentId(Long parentId);
 }

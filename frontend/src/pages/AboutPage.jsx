@@ -18,7 +18,7 @@ const AboutPage = () => {
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
       description: '15 năm kinh nghiệm trong ngành thú y',
     },
-    {
+    {   
       name: 'Trần Thị B',
       role: 'Trưởng phòng Spa',
       image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300',

@@ -124,6 +124,8 @@ export const useAuthStore = create(
 
         state?.setHasHydrated(true);
         state?.syncAuthFromToken?.();
+        // Validate token by fetching current user from server
+        state?.fetchUser?.();
       },
     }
   )

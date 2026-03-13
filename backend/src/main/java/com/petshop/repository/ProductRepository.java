@@ -28,14 +28,14 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
            "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
     
-    // Lọc sản phẩm theo nhiều tiêu chí
+    // Lọc sản phẩm theo nhiều tiêu chí (hỗ trợ nhiều categoryId)
     @Query("SELECT p FROM Product p WHERE p.active = true " +
-           "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
+           "AND (:categoryIds IS NULL OR p.category.id IN :categoryIds) " +
            "AND (:brandId IS NULL OR p.brand.id = :brandId) " +
            "AND (:minPrice IS NULL OR p.basePrice >= :minPrice) " +
            "AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)")
     Page<Product> filterProducts(
-            @Param("categoryId") Long categoryId,
+            @Param("categoryIds") List<Long> categoryIds,
             @Param("brandId") Long brandId,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
@@ -52,8 +52,13 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT p FROM Product p WHERE p.active = true ORDER BY p.createdAt DESC")
     List<Product> findNewProducts(Pageable pageable);
     
-    // Sản phẩm theo danh mục
-    Page<Product> findByCategoryIdAndActiveIsTrue(Long categoryId, Pageable pageable);
+    // Sản phẩm theo danh mục (hỗ trợ nhiều categoryId - bao gồm cả danh mục con)
+    @Query("SELECT p FROM Product p WHERE p.active = true AND p.category.id IN :categoryIds")
+    Page<Product> findByCategoryIdInAndActiveIsTrue(@Param("categoryIds") List<Long> categoryIds, Pageable pageable);
+    
+    // Admin: Lọc theo danh mục (bao gồm cả inactive)
+    @Query("SELECT p FROM Product p WHERE p.category.id IN :categoryIds")
+    Page<Product> findByCategoryIdIn(@Param("categoryIds") List<Long> categoryIds, Pageable pageable);
     
     // Sản phẩm theo thương hiệu
     Page<Product> findByBrandIdAndActiveIsTrue(Long brandId, Pageable pageable);

@@ -52,11 +52,23 @@ const DashboardPage = () => {
     const orderConfig = {
       PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'Chờ xác nhận' },
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Đã xác nhận' },
+      PROCESSING: { bg: 'bg-indigo-100', text: 'text-indigo-600', label: 'Đang xử lý' },
       SHIPPING: { bg: 'bg-purple-100', text: 'text-purple-600', label: 'Đang giao' },
       DELIVERED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Đã giao' },
+      COMPLETED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Hoàn thành' },
       CANCELLED: { bg: 'bg-red-100', text: 'text-red-600', label: 'Đã hủy' },
     };
-    const config = orderConfig[status] || orderConfig.PENDING;
+    const bookingConfig = {
+      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'Chờ xác nhận' },
+      CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Đã xác nhận' },
+      IN_PROGRESS: { bg: 'bg-indigo-100', text: 'text-indigo-600', label: 'Đang thực hiện' },
+      COMPLETED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Hoàn thành' },
+      CANCELLED: { bg: 'bg-red-100', text: 'text-red-600', label: 'Đã hủy' },
+      NO_SHOW: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Không đến' },
+    };
+    const configs = type === 'booking' ? bookingConfig : orderConfig;
+    const fallback = { bg: 'bg-gray-100', text: 'text-gray-600', label: status };
+    const config = configs[status] || fallback;
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
         {config.label}
@@ -181,7 +193,7 @@ const DashboardPage = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-500">{booking.bookingDate}</p>
-                  {getStatusBadge(booking.status)}
+                  {getStatusBadge(booking.status, 'booking')}
                 </div>
               </div>
             ))}

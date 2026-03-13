@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
-import { FiSearch, FiShoppingCart, FiMenu, FiX, FiChevronDown, FiHeart } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiMenu, FiX, FiChevronDown, FiHeart, FiChevronRight } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
+import { categoriesApi } from '../../services/api';
 
 const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -12,6 +13,11 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [activePetType, setActivePetType] = useState(null);
+  const categoryMenuRef = useRef(null);
+  const categoryTimeoutRef = useRef(null);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,6 +35,27 @@ const Header = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
+
+  useEffect(() => {
+    categoriesApi.getTree().then(res => setCategories(res.data)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (categories.length > 0 && !activePetType) {
+      setActivePetType(categories[0]?.id);
+    }
+  }, [categories, activePetType]);
+
+  const handleCategoryMenuEnter = () => {
+    clearTimeout(categoryTimeoutRef.current);
+    setCategoryMenuOpen(true);
+  };
+
+  const handleCategoryMenuLeave = () => {
+    categoryTimeoutRef.current = setTimeout(() => {
+      setCategoryMenuOpen(false);
+    }, 200);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -53,6 +80,9 @@ const Header = () => {
     { path: '/about', label: 'Về chúng tôi' },
     { path: '/contact', label: 'Liên hệ' },
   ];
+
+  // Lấy danh mục cha đang active
+  const activePetCategory = categories.find(c => c.id === activePetType);
 
   return (
     <>
@@ -100,21 +130,129 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                    location.pathname === link.path
-                      ? 'bg-petshop-orange text-white'
-                      : isScrolled
-                      ? 'text-gray-700 hover:bg-gray-100'
-                      : 'text-gray-700 hover:bg-white/50'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                // Thêm mega-menu cho "Sản phẩm"
+                if (link.path === '/products') {
+                  return (
+                    <div
+                      key={link.path}
+                      className="relative"
+                      onMouseEnter={handleCategoryMenuEnter}
+                      onMouseLeave={handleCategoryMenuLeave}
+                      ref={categoryMenuRef}
+                    >
+                      <Link
+                        to={link.path}
+                        className={`px-4 py-2 rounded-full font-medium transition-all duration-200 flex items-center gap-1 ${
+                          location.pathname === link.path || location.pathname.startsWith('/products')
+                            ? 'bg-petshop-orange text-white'
+                            : isScrolled
+                            ? 'text-gray-700 hover:bg-gray-100'
+                            : 'text-gray-700 hover:bg-white/50'
+                        }`}
+                      >
+                        {link.label}
+                        <FiChevronDown className={`w-3.5 h-3.5 transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`} />
+                      </Link>
+
+                      {/* Mega Menu Dropdown */}
+                      <AnimatePresence>
+                        {categoryMenuOpen && categories.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 8 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute left-1/2 -translate-x-1/2 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden"
+                            style={{ minWidth: '720px' }}
+                          >
+                            <div className="flex">
+                              {/* Tab bên trái: Loại thú cưng (Level 0) */}
+                              <div className="w-48 bg-gray-50 border-r border-gray-100 py-3">
+                                {categories.map(rootCat => (
+                                  <button
+                                    key={rootCat.id}
+                                    onMouseEnter={() => setActivePetType(rootCat.id)}
+                                    className={`w-full text-left px-5 py-2.5 text-sm font-medium transition-all flex items-center justify-between ${
+                                      activePetType === rootCat.id
+                                        ? 'bg-white text-petshop-orange border-r-2 border-petshop-orange'
+                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                                    }`}
+                                  >
+                                    {rootCat.name}
+                                    <FiChevronRight className="w-3.5 h-3.5" />
+                                  </button>
+                                ))}
+                                <div className="border-t border-gray-200 mt-2 pt-2 px-5">
+                                  <Link
+                                    to="/products"
+                                    onClick={() => setCategoryMenuOpen(false)}
+                                    className="text-sm text-petshop-blue hover:underline"
+                                  >
+                                    Xem tất cả →
+                                  </Link>
+                                </div>
+                              </div>
+
+                              {/* Nội dung bên phải: danh mục level 1 & 2 */}
+                              <div className="flex-1 p-5">
+                                {activePetCategory && activePetCategory.children && (
+                                  <div className="grid grid-cols-3 gap-x-8 gap-y-5">
+                                    {activePetCategory.children.map(level1Cat => (
+                                      <div key={level1Cat.id}>
+                                        {/* Level 1 header */}
+                                        <Link
+                                          to={`/products?category=${level1Cat.slug}`}
+                                          onClick={() => setCategoryMenuOpen(false)}
+                                          className="font-bold text-gray-800 text-sm hover:text-petshop-orange transition-colors block mb-2 pb-1 border-b border-gray-100"
+                                        >
+                                          {level1Cat.name}
+                                        </Link>
+                                        {/* Level 2 items */}
+                                        {level1Cat.children && level1Cat.children.length > 0 && (
+                                          <ul className="space-y-1">
+                                            {level1Cat.children.map(level2Cat => (
+                                              <li key={level2Cat.id}>
+                                                <Link
+                                                  to={`/products?category=${level2Cat.slug}`}
+                                                  onClick={() => setCategoryMenuOpen(false)}
+                                                  className="text-sm text-gray-500 hover:text-petshop-orange transition-colors block py-0.5"
+                                                >
+                                                  {level2Cat.name}
+                                                </Link>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
+                      location.pathname === link.path
+                        ? 'bg-petshop-orange text-white'
+                        : isScrolled
+                        ? 'text-gray-700 hover:bg-gray-100'
+                        : 'text-gray-700 hover:bg-white/50'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
 
             {/* Right Actions */}
@@ -287,19 +425,83 @@ const Header = () => {
               className="fixed inset-0 top-16 bg-white z-40 lg:hidden overflow-y-auto"
             >
               <div className="p-4 space-y-2">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`block px-4 py-3 rounded-xl font-medium transition-all ${
-                      location.pathname === link.path
-                        ? 'bg-petshop-orange text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {navLinks.map((link) => {
+                  // Mobile: Danh mục sản phẩm dạng accordion
+                  if (link.path === '/products' && categories.length > 0) {
+                    return (
+                      <div key={link.path}>
+                        <Link
+                          to={link.path}
+                          className={`block px-4 py-3 rounded-xl font-medium transition-all ${
+                            location.pathname === link.path
+                              ? 'bg-petshop-orange text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {link.label}
+                        </Link>
+                        {/* Mobile category tree */}
+                        <div className="ml-4 mt-1 space-y-1">
+                          {categories.map(rootCat => (
+                            <div key={rootCat.id}>
+                              <button
+                                onClick={() => setActivePetType(activePetType === rootCat.id ? null : rootCat.id)}
+                                className="w-full flex items-center justify-between px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-lg"
+                              >
+                                {rootCat.name}
+                                <FiChevronDown className={`w-4 h-4 transition-transform ${activePetType === rootCat.id ? 'rotate-180' : ''}`} />
+                              </button>
+                              <AnimatePresence>
+                                {activePetType === rootCat.id && rootCat.children && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden ml-3"
+                                  >
+                                    {rootCat.children.map(l1 => (
+                                      <div key={l1.id} className="mb-1">
+                                        <Link
+                                          to={`/products?category=${l1.slug}`}
+                                          className="block px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-petshop-orange"
+                                        >
+                                          {l1.name}
+                                        </Link>
+                                        {l1.children && l1.children.map(l2 => (
+                                          <Link
+                                            key={l2.id}
+                                            to={`/products?category=${l2.slug}`}
+                                            className="block px-6 py-1 text-sm text-gray-400 hover:text-petshop-orange"
+                                          >
+                                            {l2.name}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={`block px-4 py-3 rounded-xl font-medium transition-all ${
+                        location.pathname === link.path
+                          ? 'bg-petshop-orange text-white'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
                 
                 {!isAuthenticated && (
                   <div className="pt-4 space-y-2">

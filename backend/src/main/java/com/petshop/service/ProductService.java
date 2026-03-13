@@ -13,13 +13,14 @@ public interface ProductService {
     // CRUD
     ProductDTO createProduct(ProductRequest request);
     ProductDTO updateProduct(Long id, ProductRequest request);
-    void deleteProduct(Long id);
+    String deleteProduct(Long id);
     ProductDTO getProductById(Long id);
     ProductDTO getProductBySlug(String slug);
+    ProductDTO toggleActive(Long id);
     
     // Danh sách sản phẩm
     Page<ProductDTO> getAllProducts(Pageable pageable);
-    Page<ProductDTO> getAllProductsAdmin(Pageable pageable); // Lấy tất cả sản phẩm cho Admin (bao gồm inactive)
+    Page<ProductDTO> getAllProductsAdmin(Long categoryId, Pageable pageable);
     Page<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable);
     Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable);
     

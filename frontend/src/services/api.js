@@ -37,8 +37,12 @@ api.interceptors.response.use(
 
       // Token expired or invalid (avoid redirect loops on login/register)
       if (!isAuthEndpoint) {
-        useAuthStore.getState().logout();
-        window.location.href = '/login';
+        const store = useAuthStore.getState();
+        // Only logout if we were previously authenticated (avoid loop on fresh load)
+        if (store.isAuthenticated) {
+          store.logout();
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -75,12 +79,19 @@ export const productsApi = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
+  toggleActive: (id) => api.patch(`/products/${id}/toggle-active`),
 };
 
 // Categories API
 export const categoriesApi = {
+<<<<<<< HEAD
   getAll: () => api.get("/categories"),
   getTree: () => api.get("/categories/tree"),
+=======
+  getAll: () => api.get('/categories'),
+  getTree: () => api.get('/categories/tree'),
+  getAdminTree: () => api.get('/categories/admin/tree'),
+>>>>>>> origin/develop
   getById: (id) => api.get(`/categories/${id}`),
   getBySlug: (slug) => api.get(`/categories/slug/${slug}`),
   getByPetType: (petType) => api.get(`/categories/pet-type/${petType}`),
@@ -164,6 +175,26 @@ export const ordersApi = {
     api.post(`/orders/${id}/payment-status`, null, {
       params: { status, transactionId },
     }),
+  delete: (id) => api.delete(`/orders/${id}`),
+  updateStatus: (id, newStatus) => {
+    const status = String(newStatus || '').toUpperCase();
+    switch (status) {
+      case 'CONFIRMED':
+        return ordersApi.confirm(id);
+      case 'PROCESSING':
+        return ordersApi.process(id);
+      case 'SHIPPING':
+        return ordersApi.ship(id);
+      case 'DELIVERED':
+        return ordersApi.deliver(id);
+      case 'COMPLETED':
+        return ordersApi.complete(id);
+      case 'CANCELLED':
+        return ordersApi.adminCancel(id, 'Admin hủy đơn');
+      default:
+        return Promise.reject(new Error(`Unsupported order status: ${newStatus}`));
+    }
+  },
 };
 
 // Pets API
@@ -203,8 +234,9 @@ export const usersApi = {
   getAll: (params) => api.get("/users", { params }),
   getById: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
-  updateStatus: (id, status) =>
-    api.put(`/users/${id}/status`, null, { params: { status } }),
+  updateRole: (id, role) => api.put(`/users/${id}/role`, null, { params: { role } }),
+  updateStatus: (id, active) =>
+    api.put(`/users/${id}/status`, null, { params: { active } }),
   delete: (id) => api.delete(`/users/${id}`),
 };
 

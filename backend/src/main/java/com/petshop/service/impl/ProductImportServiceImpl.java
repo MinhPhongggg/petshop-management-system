@@ -126,7 +126,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             exampleRow.createCell(COL_NAME).setCellValue("Thức ăn cho chó Royal Canin");
             exampleRow.createCell(COL_SHORT_DESC).setCellValue("Thức ăn hạt cao cấp cho chó");
             exampleRow.createCell(COL_DESCRIPTION).setCellValue("Mô tả chi tiết sản phẩm...");
-            exampleRow.createCell(COL_CATEGORY).setCellValue("Chó > Thức ăn (Hạt, Pate, Sữa)");
+            exampleRow.createCell(COL_CATEGORY).setCellValue("Chó > Thức ăn > Thức ăn hạt");
             exampleRow.createCell(COL_BRAND).setCellValue("Royal Canin");
             exampleRow.createCell(COL_BASE_PRICE).setCellValue(450000);
             exampleRow.createCell(COL_SALE_PRICE).setCellValue(380000);
@@ -152,7 +152,7 @@ public class ProductImportServiceImpl implements ProductImportService {
             guideSheet.createRow(guideRow++);
             guideSheet.createRow(guideRow++).createCell(0).setCellValue("1. Các cột có dấu (*) là bắt buộc");
             guideSheet.createRow(guideRow++).createCell(0).setCellValue("2. Tên danh mục phải khớp với danh mục đã có trong hệ thống (xem sheet 'Danh mục')");
-            guideSheet.createRow(guideRow++).createCell(0).setCellValue("3. Nếu có nhiều danh mục cùng tên, sử dụng đường dẫn đầy đủ (VD: 'Chó > Thức ăn')");
+            guideSheet.createRow(guideRow++).createCell(0).setCellValue("3. Nếu có nhiều danh mục cùng tên, sử dụng đường dẫn đầy đủ (VD: 'Chó > Thức ăn > Thức ăn hạt')");
             guideSheet.createRow(guideRow++).createCell(0).setCellValue("4. Tên thương hiệu nếu không tồn tại sẽ được tạo mới");
             guideSheet.createRow(guideRow++).createCell(0).setCellValue("5. Để thêm nhiều biến thể cho cùng 1 sản phẩm, nhập cùng tên sản phẩm ở nhiều dòng");
             guideSheet.createRow(guideRow++).createCell(0).setCellValue("6. Giá sử dụng số nguyên, không dùng dấu phẩy (VD: 450000)");
@@ -283,7 +283,14 @@ public class ProductImportServiceImpl implements ProductImportService {
                 if (category == null) {
                     result.addError(mainRow.getRowNumber(), productName, 
                         "Danh mục không tồn tại: " + mainRow.getCategoryName() + 
-                        ". Nếu có nhiều danh mục cùng tên, sử dụng đường dẫn đầy đủ (VD: 'Chó > Thức ăn')");
+                        ". Nếu có nhiều danh mục cùng tên, sử dụng đường dẫn đầy đủ (VD: 'Chó > Thức ăn > Thức ăn hạt')");
+                    continue;
+                }
+                
+                // Validate: chỉ cho phép gán sản phẩm vào danh mục lá
+                if (categoryRepository.existsByParentId(category.getId())) {
+                    result.addError(mainRow.getRowNumber(), productName, 
+                        "Danh mục '" + category.getFullPath() + "' không phải danh mục lá. Vui lòng chọn danh mục cấp cuối cùng");
                     continue;
                 }
                 
