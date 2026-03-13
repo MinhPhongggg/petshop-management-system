@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserDTO getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof UserPrincipal)) {
             throw new BadRequestException("Chưa đăng nhập");
         }
         
@@ -160,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
     
     private User getAuthenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        if (authentication == null || !authentication.isAuthenticated() || !(authentication.getPrincipal() instanceof UserPrincipal)) {
             throw new BadRequestException("Chưa đăng nhập");
         }
         

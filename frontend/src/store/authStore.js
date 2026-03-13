@@ -1,6 +1,46 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { authApi } from '../services/api';
+
+const AUTH_STORAGE_KEY = 'auth-storage';
+const AUTH_SESSION_STORAGE_KEY = 'auth-storage-session';
+
+const readStoredAuth = (name) => {
+  const fromSession = sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  if (fromSession) {
+    return fromSession;
+  }
+  return localStorage.getItem(name);
+};
+
+const writeStoredAuth = (name, value) => {
+  try {
+    const parsed = JSON.parse(value);
+    const shouldRemember = Boolean(parsed?.state?.rememberMe);
+
+    if (shouldRemember) {
+      localStorage.setItem(name, value);
+      sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+      return;
+    }
+  } catch (error) {
+    // Fallback to durable storage if parsing fails.
+  }
+
+  sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, value);
+  localStorage.removeItem(name);
+};
+
+const removeStoredAuth = (name) => {
+  localStorage.removeItem(name);
+  sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+};
+
+const authStorage = {
+  getItem: (name) => readStoredAuth(name),
+  setItem: (name, value) => writeStoredAuth(name, value),
+  removeItem: (name) => removeStoredAuth(name),
+};
 
 export const useAuthStore = create(
   persist(
@@ -11,6 +51,7 @@ export const useAuthStore = create(
       hasHydrated: false,
       isLoading: false,
       error: null,
+      rememberMe: true,
 
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       syncAuthFromToken: () => {
@@ -21,13 +62,15 @@ export const useAuthStore = create(
       login: async (credentials) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.login(credentials);
+          const { rememberMe = true, ...loginPayload } = credentials;
+          const response = await authApi.login(loginPayload);
           // BE returns { accessToken, tokenType, expiresIn, user }
           const { accessToken, user } = response.data;
           set({
             user,
             token: accessToken,
             isAuthenticated: true,
+            rememberMe,
             isLoading: false,
           });
           return { success: true };
@@ -91,6 +134,7 @@ export const useAuthStore = create(
           token: null,
           isAuthenticated: false,
           error: null,
+          rememberMe: true,
         });
       },
 
@@ -113,8 +157,14 @@ export const useAuthStore = create(
       clearError: () => set({ error: null }),
     }),
     {
-      name: 'auth-storage',
-      partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
+      name: AUTH_STORAGE_KEY,
+      storage: createJSONStorage(() => authStorage),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        rememberMe: state.rememberMe,
+      }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           // If rehydration fails, still unblock route guards.

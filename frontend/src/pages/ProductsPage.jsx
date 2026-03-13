@@ -25,6 +25,29 @@ const ProductsPage = () => {
   });
 
   useEffect(() => {
+    const nextFilters = {
+      category: searchParams.get('category') || '',
+      minPrice: searchParams.get('minPrice') || '',
+      maxPrice: searchParams.get('maxPrice') || '',
+      sort: searchParams.get('sort') || 'newest',
+      search: searchParams.get('search') || '',
+      page: parseInt(searchParams.get('page')) || 0,
+    };
+
+    setFilters((currentFilters) => {
+      const isSame =
+        currentFilters.category === nextFilters.category &&
+        currentFilters.minPrice === nextFilters.minPrice &&
+        currentFilters.maxPrice === nextFilters.maxPrice &&
+        currentFilters.sort === nextFilters.sort &&
+        currentFilters.search === nextFilters.search &&
+        currentFilters.page === nextFilters.page;
+
+      return isSame ? currentFilters : nextFilters;
+    });
+  }, [searchParams]);
+
+  useEffect(() => {
     fetchCategories();
   }, []);
 
@@ -66,6 +89,10 @@ const ProductsPage = () => {
     }
     return null;
   };
+
+  const selectedCategory = filters.category
+    ? findCategoryBySlug(categories, filters.category)
+    : null;
 
   // Component hiển thị một danh mục
   const CategoryItem = ({ category, level = 0 }) => {
@@ -143,6 +170,10 @@ const ProductsPage = () => {
   };
 
   const fetchProducts = async () => {
+    if (filters.category && categories.length === 0) {
+      return;
+    }
+
     setLoading(true);
     try {
       const params = {
@@ -159,8 +190,13 @@ const ProductsPage = () => {
       } else if (filters.category || filters.minPrice || filters.maxPrice) {
         // Tìm categoryId từ slug nếu có
         let categoryId = null;
-        if (filters.category && categories.length > 0) {
-          const foundCategory = findCategoryBySlug(categories, filters.category);
+        if (filters.category) {
+          const foundCategory = selectedCategory;
+          if (!foundCategory) {
+            setProducts([]);
+            setTotalPages(0);
+            return;
+          }
           categoryId = foundCategory ? foundCategory.id : null;
         }
         
@@ -178,10 +214,35 @@ const ProductsPage = () => {
       setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]);
+      setTotalPages(0);
     } finally {
       setLoading(false);
     }
   };
+
+  const getEmptyStateContent = () => {
+    if (filters.category && selectedCategory) {
+      return {
+        title: `Danh mục "${selectedCategory.name}" hiện chưa có sản phẩm`,
+        description: 'Vui lòng chọn danh mục khác hoặc quay lại tất cả sản phẩm.',
+      };
+    }
+
+    if (filters.search) {
+      return {
+        title: 'Không tìm thấy sản phẩm',
+        description: 'Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc hiện tại.',
+      };
+    }
+
+    return {
+      title: 'Không có sản phẩm',
+      description: 'Thử thay đổi bộ lọc để xem thêm sản phẩm khác.',
+    };
+  };
+
+  const emptyState = getEmptyStateContent();
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value, page: 0 };
@@ -411,10 +472,10 @@ const ProductsPage = () => {
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🐾</div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">
-                  Không tìm thấy sản phẩm
+                  {emptyState.title}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm
+                  {emptyState.description}
                 </p>
                 <button onClick={clearFilters} className="btn-primary">
                   Xóa bộ lọc

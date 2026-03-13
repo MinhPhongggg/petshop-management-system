@@ -15,9 +15,11 @@ api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
     const requestUrl = config.url || '';
-    const isAuthEndpoint = requestUrl.startsWith('/auth/');
+    const isPublicAuthEndpoint =
+      requestUrl.startsWith('/auth/login') ||
+      requestUrl.startsWith('/auth/register');
 
-    if (token && !isAuthEndpoint) {
+    if (token && !isPublicAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -33,10 +35,12 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const requestUrl = error.config?.url || '';
-      const isAuthEndpoint = requestUrl.startsWith('/auth/login') || requestUrl.startsWith('/auth/register');
+      const isPublicAuthEndpoint =
+        requestUrl.startsWith('/auth/login') ||
+        requestUrl.startsWith('/auth/register');
 
       // Token expired or invalid (avoid redirect loops on login/register)
-      if (!isAuthEndpoint) {
+      if (!isPublicAuthEndpoint) {
         const store = useAuthStore.getState();
         // Only logout if we were previously authenticated (avoid loop on fresh load)
         if (store.isAuthenticated) {

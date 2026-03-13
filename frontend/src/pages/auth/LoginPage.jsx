@@ -16,6 +16,7 @@ const LoginPage = () => {
     email: '',
     password: '',
   });
+  const [rememberMe, setRememberMe] = useState(true);
 
   const from = location.state?.from?.pathname || '/';
 
@@ -36,6 +37,7 @@ const LoginPage = () => {
     const result = await login({
       username: formData.email.trim(),
       password: formData.password,
+      rememberMe,
     });
     
     if (result.success) {
@@ -112,7 +114,12 @@ const LoginPage = () => {
 
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 text-petshop-orange rounded" />
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-petshop-orange rounded"
+                />
                 <span className="text-gray-600">Ghi nhớ đăng nhập</span>
               </label>
               <Link to="/forgot-password" className="text-petshop-orange hover:underline">
