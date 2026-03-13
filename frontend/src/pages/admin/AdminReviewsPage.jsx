@@ -9,7 +9,7 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import toast from "react-hot-toast";
-import { reviewsApi, productsApi } from "../../services/api";
+import { reviewsApi } from "../../services/api";
 
 const AdminReviewsPage = () => {
   const [reviews, setReviews] = useState([]);

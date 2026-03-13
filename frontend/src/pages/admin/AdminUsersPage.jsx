@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiSearch, FiEdit2, FiTrash2, FiUserCheck, FiUserX, FiMail, FiPhone, FiX, FiCheck } from 'react-icons/fi';
+import { FiSearch, FiEdit2, FiTrash2, FiUserCheck, FiUserX, FiMail, FiPhone, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { usersApi } from '../../services/api';
 

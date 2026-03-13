@@ -5,7 +5,6 @@ import {
   FiUser,
   FiPackage,
   FiCalendar,
-  FiHeart,
   FiLogOut,
   FiStar,
 } from "react-icons/fi";

@@ -84,14 +84,9 @@ export const productsApi = {
 
 // Categories API
 export const categoriesApi = {
-<<<<<<< HEAD
   getAll: () => api.get("/categories"),
   getTree: () => api.get("/categories/tree"),
-=======
-  getAll: () => api.get('/categories'),
-  getTree: () => api.get('/categories/tree'),
-  getAdminTree: () => api.get('/categories/admin/tree'),
->>>>>>> origin/develop
+  getAdminTree: () => api.get("/categories/admin/tree"),
   getById: (id) => api.get(`/categories/${id}`),
   getBySlug: (slug) => api.get(`/categories/slug/${slug}`),
   getByPetType: (petType) => api.get(`/categories/pet-type/${petType}`),
