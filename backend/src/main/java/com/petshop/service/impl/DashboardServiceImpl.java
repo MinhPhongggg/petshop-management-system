@@ -6,6 +6,7 @@ import com.petshop.entity.Order;
 import com.petshop.repository.*;
 import com.petshop.service.DashboardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderRepository orderRepository;
     private final BookingRepository bookingRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository productVariantRepository;
     private final UserRepository userRepository;
     
     @Override
@@ -100,7 +102,7 @@ public class DashboardServiceImpl implements DashboardService {
         
         // Daily revenue (within date range)
         List<DashboardDTO.DailyRevenueDTO> dailyRevenue = orderRepository
-            .getDailyRevenue(startDateTime)
+            .getDailyRevenue(startDateTime, endDateTime)
             .stream()
             .map(row -> DashboardDTO.DailyRevenueDTO.builder()
                 .date(row[0].toString())

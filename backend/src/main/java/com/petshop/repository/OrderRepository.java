@@ -45,10 +45,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                              @Param("endDate") LocalDateTime endDate);
     
     // Doanh thu theo ngày (30 ngày gần nhất)
-    @Query(value = "SELECT DATE(created_at) as date, SUM(total_amount) as revenue, COUNT(*) as order_count " +
-                   "FROM orders WHERE status = 'COMPLETED' AND created_at >= :startDate " +
+       @Query(value = "SELECT DATE(created_at) as date, SUM(total_amount) as revenue, COUNT(*) as order_count " +
+                               "FROM orders WHERE status = 'COMPLETED' AND created_at BETWEEN :startDate AND :endDate " +
                    "GROUP BY DATE(created_at) ORDER BY date", nativeQuery = true)
-    List<Object[]> getDailyRevenue(@Param("startDate") LocalDateTime startDate);
+       List<Object[]> getDailyRevenue(@Param("startDate") LocalDateTime startDate,
+                                                           @Param("endDate") LocalDateTime endDate);
     
     // Count orders by date range
     Long countByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);

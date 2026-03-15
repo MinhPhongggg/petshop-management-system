@@ -12,28 +12,25 @@ import 'swiper/css/effect-fade';
 
 import ProductCard from '../components/product/ProductCard';
 import ServiceCard from '../components/service/ServiceCard';
-import { productsApi, servicesApi, categoriesApi } from '../services/api';
+import { productsApi, servicesApi } from '../services/api';
 
 const HomePage = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [newProducts, setNewProducts] = useState([]);
   const [services, setServices] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featuredRes, newRes, servicesRes, categoriesRes] = await Promise.all([
+        const [featuredRes, newRes, servicesRes] = await Promise.all([
           productsApi.getFeatured(),
           productsApi.getNew(8),
           servicesApi.getActive(),
-          categoriesApi.getAll(),
         ]);
         setFeaturedProducts(featuredRes.data);
         setNewProducts(newRes.data);
         setServices(servicesRes.data);
-        setCategories(categoriesRes.data.slice(0, 8));
       } catch (error) {
         console.error('Error fetching data:', error);
         // Set mock data for demo
@@ -53,14 +50,6 @@ const HomePage = () => {
           { id: 1, name: 'Tắm Spa thú cưng', slug: 'tam-spa-thu-cung', description: 'Dịch vụ tắm spa chuyên nghiệp cho thú cưng', imageUrl: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=400', duration: 60, petType: 'ALL', pricingList: [{ price: 200000 }] },
           { id: 2, name: 'Cắt tỉa lông', slug: 'cat-tia-long', description: 'Cắt tỉa và tạo kiểu lông chuyên nghiệp', imageUrl: 'https://images.unsplash.com/photo-1591946614720-90a587da4a36?w=400', duration: 90, petType: 'DOG', pricingList: [{ price: 300000 }] },
           { id: 3, name: 'Massage thư giãn', slug: 'massage-thu-gian', description: 'Massage giúp thú cưng thư giãn', imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=400', duration: 45, petType: 'ALL', pricingList: [{ price: 150000 }] },
-        ]);
-        setCategories([
-          { id: 1, name: 'Thức ăn', slug: 'thuc-an', icon: '🍖', productCount: 150 },
-          { id: 2, name: 'Phụ kiện', slug: 'phu-kien', icon: '🎀', productCount: 89 },
-          { id: 3, name: 'Đồ chơi', slug: 'do-choi', icon: '🎾', productCount: 67 },
-          { id: 4, name: 'Chuồng', slug: 'chuong', icon: '🏠', productCount: 34 },
-          { id: 5, name: 'Chăm sóc', slug: 'cham-soc', icon: '🧴', productCount: 78 },
-          { id: 6, name: 'Y tế', slug: 'y-te', icon: '💊', productCount: 45 },
         ]);
       } finally {
         setLoading(false);
@@ -184,50 +173,6 @@ const HomePage = () => {
                   <h3 className="font-semibold text-gray-800">{feature.title}</h3>
                   <p className="text-sm text-gray-500">{feature.description}</p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="section-title"
-            >
-              Danh mục <span className="gradient-text">sản phẩm</span>
-            </motion.h2>
-            <p className="section-subtitle">Khám phá các danh mục sản phẩm đa dạng cho thú cưng của bạn</p>
-          </div>
-
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
-            {categories.map((category, index) => (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Link
-                  to={`/products?category=${category.slug}`}
-                  className="block p-4 md:p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 text-center group"
-                >
-                  <div className="text-4xl md:text-5xl mb-3 group-hover:scale-110 transition-transform duration-300">
-                    {category.icon || '🐾'}
-                  </div>
-                  <h3 className="font-semibold text-gray-800 group-hover:text-petshop-orange transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {category.productCount || 0} sản phẩm
-                  </p>
-                </Link>
               </motion.div>
             ))}
           </div>
