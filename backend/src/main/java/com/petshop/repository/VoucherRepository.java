@@ -20,8 +20,23 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     // Voucher đang hoạt động
     @Query("SELECT v FROM Voucher v WHERE v.active = true " +
            "AND v.startDate <= :now AND v.endDate >= :now " +
-           "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit)")
+           "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit) " +
+           "AND (v.targetUser IS NULL)")
     List<Voucher> findActiveVouchers(@Param("now") LocalDateTime now);
+    
+    // Voucher đang hoạt động (bao gồm cá nhân cho user)
+    @Query("SELECT v FROM Voucher v WHERE v.active = true " +
+           "AND v.startDate <= :now AND v.endDate >= :now " +
+           "AND (v.usageLimit IS NULL OR v.usedCount < v.usageLimit) " +
+           "AND (v.targetUser IS NULL OR v.targetUser.id = :userId)")
+    List<Voucher> findActiveVouchersForUser(@Param("now") LocalDateTime now, @Param("userId") Long userId);
+
+    // Tìm voucher theo category và target user
+    @Query("SELECT v FROM Voucher v WHERE v.voucherCategory = :category " +
+           "AND v.targetUser.id = :userId AND v.active = true")
+    List<Voucher> findByCategoryAndTargetUser(
+            @Param("category") Voucher.VoucherCategory category, 
+            @Param("userId") Long userId);
     
     // Tất cả voucher (admin)
     Page<Voucher> findAllByOrderByCreatedAtDesc(Pageable pageable);

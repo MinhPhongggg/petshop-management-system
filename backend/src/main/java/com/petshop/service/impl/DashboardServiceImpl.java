@@ -85,6 +85,43 @@ public class DashboardServiceImpl implements DashboardService {
         Double orderGrowth = calculateGrowth(BigDecimal.valueOf(totalOrders), BigDecimal.valueOf(prevTotalOrders));
         Double bookingGrowth = calculateGrowth(BigDecimal.valueOf(totalBookings), BigDecimal.valueOf(prevTotalBookings));
         
+        // Top selling products (top 5)
+        List<DashboardDTO.TopProductDTO> topProducts = productRepository
+            .findBestSelling(PageRequest.of(0, 5))
+            .stream()
+            .map(product -> DashboardDTO.TopProductDTO.builder()
+                .productId(product.getId())
+                .productName(product.getName())
+                .productImage(product.getImages().isEmpty() ? null : product.getImages().get(0).getImageUrl())
+                .soldCount(product.getSoldCount())
+                .revenue(product.getBasePrice().multiply(BigDecimal.valueOf(product.getSoldCount())))
+                .build())
+            .collect(Collectors.toList());
+        
+        // Daily revenue (within date range)
+        List<DashboardDTO.DailyRevenueDTO> dailyRevenue = orderRepository
+            .getDailyRevenue(startDateTime)
+            .stream()
+            .map(row -> DashboardDTO.DailyRevenueDTO.builder()
+                .date(row[0].toString())
+                .revenue(row[1] != null ? new BigDecimal(row[1].toString()) : BigDecimal.ZERO)
+                .orderCount(row.length > 2 && row[2] != null ? ((Number) row[2]).longValue() : 0L)
+                .build())
+            .collect(Collectors.toList());
+        
+        // Low stock products (threshold = 10)
+        List<DashboardDTO.LowStockDTO> lowStockProducts = productVariantRepository
+            .findLowStock(10)
+            .stream()
+            .map(variant -> DashboardDTO.LowStockDTO.builder()
+                .variantId(variant.getId())
+                .productName(variant.getProduct().getName())
+                .variantName(variant.getName())
+                .stockQuantity(variant.getStock())
+                .threshold(10)
+                .build())
+            .collect(Collectors.toList());
+        
         // Recent orders (last 5)
         List<DashboardDTO.RecentOrderDTO> recentOrders = orderRepository
             .findTop5ByOrderByCreatedAtDesc()
@@ -127,6 +164,9 @@ public class DashboardServiceImpl implements DashboardService {
             .pendingOrders(pendingOrders)
             .completedOrders(completedOrders)
             .pendingBookings(pendingBookings)
+            .topProducts(topProducts)
+            .dailyRevenue(dailyRevenue)
+            .lowStockProducts(lowStockProducts)
             .recentOrders(recentOrders)
             .recentBookings(recentBookings)
             .build();

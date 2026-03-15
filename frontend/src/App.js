@@ -24,22 +24,26 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 
 // User Pages
-import ProfilePage from "./pages/user/ProfilePage";
-import MyOrdersPage from "./pages/user/MyOrdersPage";
-import MyBookingsPage from "./pages/user/MyBookingsPage";
-import MyPetsPage from "./pages/user/MyPetsPage";
-import MyReviewsPage from "./pages/user/MyReviewsPage";
+import ProfilePage from './pages/user/ProfilePage';
+import MyOrdersPage from './pages/user/MyOrdersPage';
+import MyBookingsPage from './pages/user/MyBookingsPage';
+import MyPetsPage from './pages/user/MyPetsPage';
+import MyRewardsPage from './pages/user/MyRewardsPage';
+import MyVouchersPage from './pages/user/MyVouchersPage';
+import MyReviewsPage from './pages/user/MyReviewsPage';
 
 // Admin Pages
-import DashboardPage from "./pages/admin/DashboardPage";
-import AdminProductsPage from "./pages/admin/AdminProductsPage";
-import AdminProductFormPage from "./pages/admin/AdminProductFormPage";
-import AdminCategoriesPage from "./pages/admin/AdminCategoriesPage";
-import AdminSalesPage from "./pages/admin/AdminSalesPage";
-import AdminBookingsPage from "./pages/admin/AdminBookingsPage";
-import AdminUsersPage from "./pages/admin/AdminUsersPage";
-import AdminServicesPage from "./pages/admin/AdminServicesPage";
-import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import DashboardPage from './pages/admin/DashboardPage';
+import AdminProductsPage from './pages/admin/AdminProductsPage';
+import AdminProductFormPage from './pages/admin/AdminProductFormPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminSalesPage from './pages/admin/AdminSalesPage';
+import AdminBookingsPage from './pages/admin/AdminBookingsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminServicesPage from './pages/admin/AdminServicesPage';
+import AdminVouchersPage from './pages/admin/AdminVouchersPage';
+import AdminReviewsPage from './pages/admin/AdminReviewsPage';
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -111,6 +115,8 @@ function App() {
             <Route path="my-orders" element={<MyOrdersPage />} />
             <Route path="my-bookings" element={<MyBookingsPage />} />
             <Route path="my-pets" element={<MyPetsPage />} />
+            <Route path="my-rewards" element={<MyRewardsPage />} />
+            <Route path="my-vouchers" element={<MyVouchersPage />} />
             <Route path="my-reviews" element={<MyReviewsPage />} />
           </Route>
         </Route>
@@ -134,6 +140,7 @@ function App() {
           <Route path="bookings" element={<AdminBookingsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="services" element={<AdminServicesPage />} />
+          <Route path="vouchers" element={<AdminVouchersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>
       </Routes>

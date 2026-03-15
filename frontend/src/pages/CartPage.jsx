@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiTrash2, FiMinus, FiPlus, FiArrowRight, FiShoppingBag } from 'react-icons/fi';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiTrash2, FiMinus, FiPlus, FiArrowRight, FiShoppingBag, FiTag, FiX, FiBookmark, FiPercent, FiDollarSign } from 'react-icons/fi';
 import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
+import { vouchersApi } from '../services/api';
+import toast from 'react-hot-toast';
 
 const CartPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     items,
     isLoading,
@@ -21,8 +24,23 @@ const CartPage = () => {
     getItemCount,
   } = useCartStore();
   const { isAuthenticated } = useAuthStore();
+  const [voucherCode, setVoucherCode] = useState('');
+  const [appliedVoucher, setAppliedVoucher] = useState(null);
+  const [discount, setDiscount] = useState(0);
+  const [voucherLoading, setVoucherLoading] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
+  const [savedVouchers, setSavedVouchers] = useState([]);
+  const [walletLoading, setWalletLoading] = useState(false);
 
   const [quantityDraft, setQuantityDraft] = useState({});
+
+  // Auto-apply voucher from navigation state (from MyVouchersPage "Dùng ngay")
+  useEffect(() => {
+    if (location.state?.voucherCode && items.length > 0) {
+      setVoucherCode(location.state.voucherCode);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, items.length]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -52,6 +70,79 @@ const CartPage = () => {
     } else {
       navigate('/checkout');
     }
+  };
+
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) return;
+    setVoucherLoading(true);
+    try {
+      const res = await vouchersApi.apply(voucherCode.trim(), getTotalPrice());
+      const discountAmount = res.data.discount;
+      if (discountAmount > 0) {
+        setDiscount(discountAmount);
+        try {
+          const vInfo = await vouchersApi.getByCode(voucherCode.trim());
+          setAppliedVoucher(vInfo.data);
+        } catch { setAppliedVoucher({ code: voucherCode.trim().toUpperCase() }); }
+        toast.success(`Áp dụng mã ${voucherCode.toUpperCase()} thành công! Giảm ${formatPrice(discountAmount)}`);
+      } else {
+        toast.error('Mã không áp dụng được cho đơn hàng này');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Mã giảm giá không hợp lệ');
+      setDiscount(0);
+      setAppliedVoucher(null);
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode('');
+    setAppliedVoucher(null);
+    setDiscount(0);
+    toast.success('Đã gỡ mã giảm giá');
+  };
+
+  const handleOpenWallet = async () => {
+    setShowWallet(true);
+    setWalletLoading(true);
+    try {
+      const res = await vouchersApi.getMySaved();
+      setSavedVouchers(res.data || []);
+    } catch {
+      toast.error('Không thể tải ví voucher');
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const handleSelectFromWallet = (code) => {
+    setVoucherCode(code);
+    setShowWallet(false);
+    setTimeout(async () => {
+      setVoucherLoading(true);
+      try {
+        const res = await vouchersApi.apply(code, getTotalPrice());
+        const discountAmount = res.data.discount;
+        if (discountAmount > 0) {
+          setDiscount(discountAmount);
+          try {
+            const vInfo = await vouchersApi.getByCode(code);
+            setAppliedVoucher(vInfo.data);
+          } catch { setAppliedVoucher({ code }); }
+          toast.success(`Áp dụng mã ${code} thành công! Giảm ${formatPrice(discountAmount)}`);
+        } else {
+          toast.error('Mã không áp dụng được cho đơn hàng này');
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Mã giảm giá không hợp lệ');
+        setDiscount(0);
+        setAppliedVoucher(null);
+      } finally {
+        setVoucherLoading(false);
+      }
+    }, 100);
   };
 
   const getItemInfo = (item) => {
@@ -324,11 +415,136 @@ const CartPage = () => {
                   <span className="text-petshop-green">Miễn phí</span>
                 </div>
                 <hr />
+                {discount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-medium">
+                    <span>Giảm giá</span>
+                    <span>-{formatPrice(discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-bold">
                   <span>Tổng cộng</span>
-                  <span className="text-petshop-orange">{formatPrice(getTotalPrice())}</span>
+                  <span className="text-petshop-orange">{formatPrice(Math.max(getTotalPrice() - discount, 0))}</span>
                 </div>
               </div>
+
+              {/* Voucher */}
+              <div className="mb-6">
+                {appliedVoucher ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <FiTag className="text-emerald-600" />
+                      <div>
+                        <p className="font-bold text-emerald-700 text-sm">{appliedVoucher.code}</p>
+                        <p className="text-xs text-emerald-600">Giảm {formatPrice(discount)}</p>
+                      </div>
+                    </div>
+                    <button onClick={handleRemoveVoucher} className="p-1.5 hover:bg-emerald-100 rounded-lg text-emerald-600 transition-colors">
+                      <FiX size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={voucherCode}
+                        onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
+                        placeholder="Nhập mã giảm giá"
+                        className="input-field flex-1 font-mono uppercase tracking-wider"
+                      />
+                      <button
+                        onClick={handleApplyVoucher}
+                        disabled={voucherLoading || !voucherCode.trim()}
+                        className="btn-outline px-4 disabled:opacity-50"
+                      >
+                        {voucherLoading ? '...' : 'Áp dụng'}
+                      </button>
+                    </div>
+                    {isAuthenticated && (
+                      <button
+                        onClick={handleOpenWallet}
+                        className="w-full flex items-center justify-center gap-2 py-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors"
+                      >
+                        <FiBookmark size={14} />
+                        Chọn từ ví voucher
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Voucher Wallet Modal */}
+              <AnimatePresence>
+                {showWallet && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowWallet(false)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.9, opacity: 0 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-white rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden"
+                    >
+                      <div className="p-4 border-b flex items-center justify-between">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                          <FiBookmark className="text-amber-600" /> Ví Voucher
+                        </h3>
+                        <button onClick={() => setShowWallet(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                          <FiX size={18} />
+                        </button>
+                      </div>
+                      <div className="overflow-y-auto max-h-[55vh] p-4 space-y-3">
+                        {walletLoading ? (
+                          <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-petshop-orange" />
+                          </div>
+                        ) : savedVouchers.length === 0 ? (
+                          <div className="text-center py-8 text-gray-500">
+                            <div className="text-3xl mb-2">🎟️</div>
+                            <p className="text-sm">Chưa có voucher nào trong ví</p>
+                            <Link to="/my-vouchers" className="text-petshop-orange text-sm mt-2 inline-block hover:underline">
+                              Khám phá voucher
+                            </Link>
+                          </div>
+                        ) : (
+                          savedVouchers.filter(v => v.isValid).map(v => (
+                            <button
+                              key={v.id}
+                              onClick={() => handleSelectFromWallet(v.code)}
+                              className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-petshop-orange hover:bg-orange-50 transition-all text-left"
+                            >
+                              <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                v.discountType === 'PERCENTAGE'
+                                  ? 'bg-orange-100 text-orange-600'
+                                  : 'bg-emerald-100 text-emerald-600'
+                              }`}>
+                                {v.discountType === 'PERCENTAGE' ? <FiPercent size={20} /> : <FiDollarSign size={20} />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-mono font-bold text-sm tracking-wider">{v.code}</p>
+                                <p className="text-xs text-gray-500 truncate">{v.description || 'Mã giảm giá'}</p>
+                                <p className="text-xs text-amber-600 mt-0.5">
+                                  {v.discountType === 'PERCENTAGE'
+                                    ? `Giảm ${v.discountValue}%`
+                                    : `Giảm ${formatPrice(v.discountValue)}`
+                                  }
+                                  {v.minOrderAmount > 0 && ` · Đơn từ ${formatPrice(v.minOrderAmount)}`}
+                                </p>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <button
                 onClick={handleCheckout}

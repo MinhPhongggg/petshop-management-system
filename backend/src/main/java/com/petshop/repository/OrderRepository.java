@@ -45,7 +45,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                                              @Param("endDate") LocalDateTime endDate);
     
     // Doanh thu theo ngày (30 ngày gần nhất)
-    @Query(value = "SELECT DATE(created_at) as date, SUM(total_amount) as revenue " +
+    @Query(value = "SELECT DATE(created_at) as date, SUM(total_amount) as revenue, COUNT(*) as order_count " +
                    "FROM orders WHERE status = 'COMPLETED' AND created_at >= :startDate " +
                    "GROUP BY DATE(created_at) ORDER BY date", nativeQuery = true)
     List<Object[]> getDailyRevenue(@Param("startDate") LocalDateTime startDate);
@@ -66,4 +66,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END FROM OrderItem oi " +
            "JOIN oi.order o WHERE o.user.id = :userId AND oi.variant.product.id = :productId AND o.status = 'COMPLETED'")
     boolean existsByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
+    
+    // ==================== ANALYTICS QUERIES ====================
+    
+    // Tổng chi tiêu sản phẩm theo user (để tính VIP)
+    @Query(value = "SELECT o.user_id, COALESCE(SUM(o.total_amount), 0) as total_spending " +
+                   "FROM orders o WHERE o.status = 'COMPLETED' " +
+                   "GROUP BY o.user_id", nativeQuery = true)
+    List<Object[]> getUserProductSpending();
+
+    // ==================== REWARD QUERIES ====================
+
+    // Tổng chi tiêu của 1 user (đơn hoàn thành)
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.user.id = :userId AND o.status = 'COMPLETED'")
+    BigDecimal getTotalSpendingByUserId(@Param("userId") Long userId);
+
+    // Số đơn hoàn thành của 1 user
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId AND o.status = 'COMPLETED'")
+    long countCompletedOrdersByUserId(@Param("userId") Long userId);
 }

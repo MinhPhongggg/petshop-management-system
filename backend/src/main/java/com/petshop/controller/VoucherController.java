@@ -76,4 +76,31 @@ public class VoucherController {
         voucherService.deleteVoucher(id);
         return ResponseEntity.noContent().build();
     }
+    
+    // Admin: usage analytics
+    @GetMapping("/{id}/usage-history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<Map<String, Object>>> getUsageHistory(
+            @PathVariable Long id,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(voucherService.getVoucherUsageHistory(id, pageable));
+    }
+    
+    // Customer wallet endpoints
+    @PostMapping("/save/{id}")
+    public ResponseEntity<Void> saveVoucher(@PathVariable Long id) {
+        voucherService.saveVoucherForUser(id);
+        return ResponseEntity.ok().build();
+    }
+    
+    @DeleteMapping("/unsave/{id}")
+    public ResponseEntity<Void> unsaveVoucher(@PathVariable Long id) {
+        voucherService.unsaveVoucherForUser(id);
+        return ResponseEntity.ok().build();
+    }
+    
+    @GetMapping("/my-saved")
+    public ResponseEntity<List<VoucherDTO>> getMySavedVouchers() {
+        return ResponseEntity.ok(voucherService.getMySavedVouchers());
+    }
 }

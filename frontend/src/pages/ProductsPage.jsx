@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiFilter, FiGrid, FiList, FiChevronDown, FiChevronRight, FiX, FiSearch } from 'react-icons/fi';
+import { FiFilter, FiGrid, FiList, FiChevronDown, FiChevronRight, FiX, FiSearch, FiGift } from 'react-icons/fi';
 import ProductCard from '../components/product/ProductCard';
-import { productsApi, categoriesApi } from '../services/api';
+import { productsApi, categoriesApi, rewardsApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isAuthenticated } = useAuthStore();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +16,7 @@ const ProductsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [expandedCategories, setExpandedCategories] = useState(new Set());
+  const [rewardInfo, setRewardInfo] = useState(null);
 
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
@@ -49,7 +52,10 @@ const ProductsPage = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+    if (isAuthenticated) {
+      rewardsApi.getMyProgress().then(res => setRewardInfo(res.data)).catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchProducts();
@@ -302,6 +308,55 @@ const ProductsPage = () => {
           <span>/</span>
           <span className="text-gray-800">Sản phẩm</span>
         </nav>
+
+        {/* Reward Banner */}
+        {isAuthenticated && rewardInfo && (
+          <Link to="/my-rewards" className="block mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-r from-petshop-orange to-orange-400 rounded-2xl p-4 text-white flex items-center justify-between hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{rewardInfo.currentTier?.icon || '⭐'}</span>
+                <div>
+                  <p className="font-bold text-sm">
+                    {rewardInfo.currentTier ? `Hạng ${rewardInfo.currentTier.displayName}` : 'Tích điểm nhận voucher'}
+                    {rewardInfo.nextTier && (
+                      <span className="font-normal opacity-80"> • Còn {new Intl.NumberFormat('vi-VN').format(rewardInfo.amountToNextTier)}đ đến hạng {rewardInfo.nextTier.displayName}</span>
+                    )}
+                  </p>
+                  {rewardInfo.nextTier && (
+                    <div className="h-1.5 bg-white/30 rounded-full mt-1 w-48">
+                      <div className="h-full bg-white rounded-full" style={{ width: `${rewardInfo.progressPercent}%` }} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2">
+                <FiGift />
+                <span className="text-sm font-bold">Xem voucher</span>
+              </div>
+            </motion.div>
+          </Link>
+        )}
+
+        {!isAuthenticated && (
+          <Link to="/login" className="block mb-6">
+            <div className="bg-gradient-to-r from-violet-500 to-purple-400 rounded-2xl p-4 text-white flex items-center justify-between hover:shadow-lg transition-shadow">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">🎁</span>
+                <div>
+                  <p className="font-bold">Mua sắm tích voucher!</p>
+                  <p className="text-sm opacity-80">Đăng nhập để tích điểm, mua càng nhiều voucher càng lớn!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2">
+                <span className="text-sm font-bold">Đăng nhập →</span>
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">

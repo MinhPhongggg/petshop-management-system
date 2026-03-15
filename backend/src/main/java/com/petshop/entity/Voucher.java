@@ -80,6 +80,17 @@ public class Voucher {
     @Builder.Default
     private Boolean active = true;
 
+    // Phân loại voucher
+    @Enumerated(EnumType.STRING)
+    @Column(name = "voucher_category")
+    @Builder.Default
+    private VoucherCategory voucherCategory = VoucherCategory.GENERAL;
+
+    // User được tặng voucher (cho voucher cá nhân: WELCOME, LOYALTY, RECURRING)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_user_id")
+    private User targetUser;
+
     // Lịch sử sử dụng
     @OneToMany(mappedBy = "voucher")
     @Builder.Default
@@ -102,6 +113,15 @@ public class Voucher {
         ALL,            // Tất cả
         PRODUCTS,       // Chỉ sản phẩm
         SERVICES        // Chỉ dịch vụ
+    }
+
+    // Phân loại chiến lược voucher
+    public enum VoucherCategory {
+        GENERAL,        // Voucher thông thường
+        WELCOME,        // Chào mừng khách hàng mới
+        SERVICE,        // Giảm giá dịch vụ (kèm điều kiện)
+        LOYALTY,        // Tri ân sinh nhật thú cưng
+        RECURRING       // Voucher định kỳ (nhắc mua lại)
     }
 
     // Helper: Kiểm tra voucher còn hiệu lực
