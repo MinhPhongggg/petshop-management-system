@@ -262,9 +262,13 @@ const ProductDetailPage = () => {
                       <FiMinus className="w-5 h-5" />
                     </button>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) => {
+                        const numericValue = e.target.value.replace(/\D/g, '');
+                        setQuantity(Math.max(1, parseInt(numericValue, 10) || 1));
+                      }}
                       className="w-16 text-center border-x-2 border-gray-200 py-2 focus:outline-none"
                     />
                     <button

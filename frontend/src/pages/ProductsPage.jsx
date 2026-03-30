@@ -190,27 +190,34 @@ const ProductsPage = () => {
               filters.sort === 'price-desc' ? 'basePrice,desc' : 'soldCount,desc',
       };
 
+      // Resolve category slug to id once and reuse for both search/filter APIs.
+      let categoryId = null;
+      if (filters.category) {
+        const foundCategory = selectedCategory;
+        if (!foundCategory) {
+          setProducts([]);
+          setTotalPages(0);
+          return;
+        }
+        categoryId = foundCategory.id;
+      }
+
+      const filterParams = {
+        ...(categoryId ? { categoryId } : {}),
+        ...(filters.minPrice ? { minPrice: filters.minPrice } : {}),
+        ...(filters.maxPrice ? { maxPrice: filters.maxPrice } : {}),
+      };
+
       let response;
       if (filters.search) {
-        response = await productsApi.search(filters.search, params);
+        response = await productsApi.search(filters.search, {
+          ...params,
+          ...filterParams,
+        });
       } else if (filters.category || filters.minPrice || filters.maxPrice) {
-        // Tìm categoryId từ slug nếu có
-        let categoryId = null;
-        if (filters.category) {
-          const foundCategory = selectedCategory;
-          if (!foundCategory) {
-            setProducts([]);
-            setTotalPages(0);
-            return;
-          }
-          categoryId = foundCategory ? foundCategory.id : null;
-        }
-        
         response = await productsApi.filter({
           ...params,
-          categoryId: categoryId,
-          minPrice: filters.minPrice || null,
-          maxPrice: filters.maxPrice || null,
+          ...filterParams,
         });
       } else {
         response = await productsApi.getAll(params);

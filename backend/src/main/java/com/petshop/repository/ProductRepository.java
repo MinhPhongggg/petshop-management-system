@@ -22,18 +22,28 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     
     Page<Product> findByActiveIsTrue(Pageable pageable);
     
-    // Tìm kiếm theo tên hoặc mô tả
+    // Tìm kiếm theo tên/mô tả và hỗ trợ lọc thêm theo category/brand/khoảng giá
     @Query("SELECT p FROM Product p WHERE p.active = true " +
            "AND (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Product> searchProducts(@Param("keyword") String keyword, Pageable pageable);
+           "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:categoryIds IS NULL OR p.category.id IN :categoryIds) " +
+           "AND (:brandId IS NULL OR p.brand.id = :brandId) " +
+           "AND (:minPrice IS NULL OR COALESCE((SELECT MIN(v.price) FROM ProductVariant v WHERE v.product = p AND v.active = true), p.basePrice) >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR COALESCE((SELECT MIN(v.price) FROM ProductVariant v WHERE v.product = p AND v.active = true), p.basePrice) <= :maxPrice)")
+    Page<Product> searchProducts(
+            @Param("keyword") String keyword,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("brandId") Long brandId,
+            @Param("minPrice") BigDecimal minPrice,
+            @Param("maxPrice") BigDecimal maxPrice,
+            Pageable pageable);
     
     // Lọc sản phẩm theo nhiều tiêu chí (hỗ trợ nhiều categoryId)
     @Query("SELECT p FROM Product p WHERE p.active = true " +
            "AND (:categoryIds IS NULL OR p.category.id IN :categoryIds) " +
            "AND (:brandId IS NULL OR p.brand.id = :brandId) " +
-           "AND (:minPrice IS NULL OR p.basePrice >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR p.basePrice <= :maxPrice)")
+           "AND (:minPrice IS NULL OR COALESCE((SELECT MIN(v.price) FROM ProductVariant v WHERE v.product = p AND v.active = true), p.basePrice) >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR COALESCE((SELECT MIN(v.price) FROM ProductVariant v WHERE v.product = p AND v.active = true), p.basePrice) <= :maxPrice)")
     Page<Product> filterProducts(
             @Param("categoryIds") List<Long> categoryIds,
             @Param("brandId") Long brandId,

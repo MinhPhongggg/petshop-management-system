@@ -255,8 +255,12 @@ public class ProductServiceImpl implements ProductService {
     }
     
     @Override
-    public Page<ProductDTO> searchProducts(String keyword, Pageable pageable) {
-        return productRepository.searchProducts(keyword, pageable).map(this::mapToDTO);
+    public Page<ProductDTO> searchProducts(String keyword, Long categoryId, Long brandId,
+                                           BigDecimal minPrice, BigDecimal maxPrice,
+                                           Pageable pageable) {
+        List<Long> categoryIds = categoryId != null ? getAllDescendantCategoryIds(categoryId) : null;
+        return productRepository.searchProducts(keyword, categoryIds, brandId, minPrice, maxPrice, pageable)
+            .map(this::mapToDTO);
     }
     
     @Override

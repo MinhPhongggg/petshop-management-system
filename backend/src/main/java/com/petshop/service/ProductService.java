@@ -25,7 +25,8 @@ public interface ProductService {
     Page<ProductDTO> getProductsByBrand(Long brandId, Pageable pageable);
     
     // Tìm kiếm & Lọc
-    Page<ProductDTO> searchProducts(String keyword, Pageable pageable);
+    Page<ProductDTO> searchProducts(String keyword, Long categoryId, Long brandId,
+                                    BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     Page<ProductDTO> filterProducts(Long categoryId, Long brandId, 
                                     BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     
