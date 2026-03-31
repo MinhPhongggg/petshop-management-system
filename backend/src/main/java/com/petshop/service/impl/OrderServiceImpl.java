@@ -258,6 +258,23 @@ public class OrderServiceImpl implements OrderService {
         return mapToDTO(order);
     }
 
+    @Override
+    @Transactional
+    public OrderDTO confirmReceivedOrder(Long id) {
+        User user = getCurrentUser();
+        Order order = getOrderEntity(id);
+
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException("Không có quyền truy cập");
+        }
+
+        if (order.getStatus() != Order.OrderStatus.DELIVERED) {
+            throw new BadRequestException("Chỉ có thể xác nhận nhận hàng khi đơn đã được giao");
+        }
+
+        return completeOrder(id);
+    }
+
     // === Admin/Staff Methods ===
 
     @Override

@@ -50,6 +50,12 @@ public class OrderController {
                                                  @RequestParam(required = false) String reason) {
         return ResponseEntity.ok(orderService.cancelOrder(id, reason));
     }
+
+    @PostMapping("/{id}/confirm-received")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<OrderDTO> confirmReceivedOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(orderService.confirmReceivedOrder(id));
+    }
     
     // === Admin/Staff endpoints ===
     

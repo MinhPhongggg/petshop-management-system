@@ -14,6 +14,7 @@ public interface OrderService {
     OrderDTO getOrderByCode(String orderCode);
     Page<OrderDTO> getMyOrders(Pageable pageable);
     OrderDTO cancelOrder(Long id, String reason);
+    OrderDTO confirmReceivedOrder(Long id);
     
     // === Admin/Staff ===
     Page<OrderDTO> getAllOrders(Pageable pageable);

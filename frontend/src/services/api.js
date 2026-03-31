@@ -158,6 +158,7 @@ export const ordersApi = {
   getByCode: (code) => api.get(`/orders/code/${code}`),
   cancel: (id, reason) =>
     api.post(`/orders/${id}/cancel`, null, { params: { reason } }),
+  confirmReceived: (id) => api.post(`/orders/${id}/confirm-received`),
   // Admin
   getAll: (params) => api.get("/orders", { params }),
   getByStatus: (status, params) =>

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiPackage } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import { ordersApi } from '../../services/api';
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmingOrderId, setConfirmingOrderId] = useState(null);
 
   useEffect(() => {
     fetchOrders(true);
@@ -47,7 +49,7 @@ const MyOrdersPage = () => {
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Đã xác nhận' },
       PROCESSING: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Đang chuẩn bị' },
       SHIPPING: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Đang giao' },
-      DELIVERED: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã giao' },
+      DELIVERED: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã giao - chờ bạn xác nhận' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Hoàn thành' },
       CANCELLED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Đã hủy' },
     };
@@ -75,6 +77,26 @@ const MyOrdersPage = () => {
       style: 'currency',
       currency: 'VND',
     }).format(price);
+  };
+
+  const handleConfirmReceived = async (orderId) => {
+    const ok = window.confirm('Xác nhận bạn đã nhận được hàng cho đơn này?');
+    if (!ok) return;
+
+    try {
+      setConfirmingOrderId(orderId);
+      await ordersApi.confirmReceived(orderId);
+      toast.success('Đã xác nhận nhận hàng thành công');
+      await fetchOrders();
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === 'string' ? error.response.data : null) ||
+        'Không thể xác nhận nhận hàng';
+      toast.error(message);
+    } finally {
+      setConfirmingOrderId(null);
+    }
   };
 
   if (loading) {
@@ -119,10 +141,29 @@ const MyOrdersPage = () => {
               </div>
 
               <div className="flex items-center justify-between p-4">
-                <span className="text-gray-500">Tổng tiền</span>
-                <span className="text-xl font-bold text-petshop-orange">
-                  {formatPrice(order.totalAmount || 0)}
-                </span>
+                <div>
+                  <span className="text-gray-500">Tổng tiền</span>
+                  {String(order.status || '').toUpperCase() === 'DELIVERED' && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Đơn đã giao{order.deliveredAt ? ` lúc ${formatDate(order.deliveredAt)}` : ''}, vui lòng xác nhận đã nhận hàng.
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  {String(order.status || '').toUpperCase() === 'DELIVERED' && (
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmReceived(order.id)}
+                      disabled={confirmingOrderId === order.id}
+                      className="px-4 py-2 rounded-lg bg-petshop-orange text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {confirmingOrderId === order.id ? 'Đang xử lý...' : 'Đã nhận hàng'}
+                    </button>
+                  )}
+                  <span className="text-xl font-bold text-petshop-orange">
+                    {formatPrice(order.totalAmount || 0)}
+                  </span>
+                </div>
               </div>
             </motion.div>
           ))}
