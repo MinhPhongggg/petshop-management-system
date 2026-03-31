@@ -74,7 +74,7 @@ public class BookingServiceImpl implements BookingService {
         // Check time slot availability
         LocalTime endTime = request.getStartTime().plusMinutes(service.getDuration());
         if (!isTimeSlotAvailable(request.getBookingDate(), request.getStartTime(), endTime)) {
-            throw new BadRequestException("Khung giờ đã được đặt");
+            throw new BadRequestException("Khung giờ đã đầy (tối đa 3 thú cưng/khung giờ)");
         }
         
         // Get price based on pet weight
@@ -97,22 +97,37 @@ public class BookingServiceImpl implements BookingService {
         return mapToDTO(booking);
     }
     
+    private static final int MAX_SLOTS_PER_TIME = 3;
+    
     @Override
     public boolean isTimeSlotAvailable(LocalDate date, LocalTime startTime, LocalTime endTime) {
+        int count = countBookingsInSlot(date, startTime, endTime);
+        return count < MAX_SLOTS_PER_TIME;
+    }
+    
+    @Override
+    public int getAvailableSlotCount(LocalDate date, LocalTime startTime, LocalTime endTime) {
+        int count = countBookingsInSlot(date, startTime, endTime);
+        return Math.max(0, MAX_SLOTS_PER_TIME - count);
+    }
+    
+    private int countBookingsInSlot(LocalDate date, LocalTime startTime, LocalTime endTime) {
         List<Booking> existingBookings = bookingRepository.findByDate(date);
+        int count = 0;
         
         for (Booking booking : existingBookings) {
-            if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
+            if (booking.getStatus() == Booking.BookingStatus.CANCELLED ||
+                booking.getStatus() == Booking.BookingStatus.NO_SHOW) {
                 continue;
             }
             
             // Check overlap
             if (startTime.isBefore(booking.getEndTime()) && endTime.isAfter(booking.getStartTime())) {
-                return false;
+                count++;
             }
         }
         
-        return true;
+        return count;
     }
     
     @Override

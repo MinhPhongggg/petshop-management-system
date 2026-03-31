@@ -57,12 +57,13 @@ public class BookingController {
     }
     
     @GetMapping("/check-availability")
-    public ResponseEntity<Map<String, Boolean>> checkAvailability(
+    public ResponseEntity<Map<String, Object>> checkAvailability(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime startTime,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime endTime) {
         boolean available = bookingService.isTimeSlotAvailable(date, startTime, endTime);
-        return ResponseEntity.ok(Map.of("available", available));
+        int remainingSlots = bookingService.getAvailableSlotCount(date, startTime, endTime);
+        return ResponseEntity.ok(Map.of("available", available, "remainingSlots", remainingSlots));
     }
     
     // Admin/Staff endpoints

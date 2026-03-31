@@ -27,6 +27,7 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import ProfilePage from './pages/user/ProfilePage';
 import MyOrdersPage from './pages/user/MyOrdersPage';
 import MyBookingsPage from './pages/user/MyBookingsPage';
+import BookingDetailPage from './pages/user/BookingDetailPage';
 import MyPetsPage from './pages/user/MyPetsPage';
 import MyRewardsPage from './pages/user/MyRewardsPage';
 import MyVouchersPage from './pages/user/MyVouchersPage';
@@ -114,6 +115,7 @@ function App() {
             <Route path="profile" element={<ProfilePage />} />
             <Route path="my-orders" element={<MyOrdersPage />} />
             <Route path="my-bookings" element={<MyBookingsPage />} />
+            <Route path="bookings/:id" element={<BookingDetailPage />} />
             <Route path="my-pets" element={<MyPetsPage />} />
             <Route path="my-rewards" element={<MyRewardsPage />} />
             <Route path="my-vouchers" element={<MyVouchersPage />} />

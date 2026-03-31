@@ -18,6 +18,9 @@ public interface BookingService {
     // Kiểm tra khung giờ trống
     boolean isTimeSlotAvailable(LocalDate date, LocalTime startTime, LocalTime endTime);
     
+    // Đếm số slot còn trống trong khung giờ
+    int getAvailableSlotCount(LocalDate date, LocalTime startTime, LocalTime endTime);
+    
     // Lấy thông tin booking
     BookingDTO getBookingById(Long id);
     BookingDTO getBookingByCode(String bookingCode);

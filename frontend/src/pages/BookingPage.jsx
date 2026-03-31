@@ -99,9 +99,9 @@ const BookingPage = () => {
           const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
           
           const response = await bookingsApi.checkAvailability(formData.date, slot.time, endTime);
-          return { ...slot, available: response.data.available };
+          return { ...slot, available: response.data.available, remainingSlots: response.data.remainingSlots };
         } catch {
-          return { ...slot, available: true }; // Nếu lỗi thì coi như trống
+          return { ...slot, available: true, remainingSlots: 3 }; // Nếu lỗi thì coi như trống
         }
       })
     );
@@ -315,7 +315,12 @@ const BookingPage = () => {
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             }`}
                           >
-                            {slot.time}
+                            <div>{slot.time}</div>
+                            <div className={`text-xs mt-1 ${
+                              !slot.available ? 'text-red-400' : slot.remainingSlots <= 1 ? 'text-orange-500' : 'text-green-500'
+                            }`}>
+                              {!slot.available ? 'Hết chỗ' : `Còn ${slot.remainingSlots}/3`}
+                            </div>
                           </button>
                         ))}
                       </div>
