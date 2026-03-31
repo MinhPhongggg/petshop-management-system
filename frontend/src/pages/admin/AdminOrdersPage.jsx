@@ -246,6 +246,26 @@ const AdminOrdersPage = ({ pageTitle = 'Quản lý đơn hàng', allowDelete = f
                           <FiTruck />
                         </button>
                       )}
+
+                      {order.status === 'SHIPPING' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
+                          className="p-2 text-gray-500 hover:text-green-500 hover:bg-green-50 rounded-lg"
+                          title="Đánh dấu đã giao"
+                        >
+                          <FiCheck />
+                        </button>
+                      )}
+
+                      {order.status === 'DELIVERED' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'COMPLETED')}
+                          className="p-2 text-gray-500 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg"
+                          title="Đánh dấu hoàn thành"
+                        >
+                          <FiCheck />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </motion.tr>
@@ -354,6 +374,14 @@ const AdminOrdersPage = ({ pageTitle = 'Quản lý đơn hàng', allowDelete = f
                     className="flex-1 btn-primary"
                   >
                     Đã giao thành công
+                  </button>
+                )}
+                {selectedOrder.status === 'DELIVERED' && (
+                  <button
+                    onClick={() => handleUpdateStatus(selectedOrder.id, 'COMPLETED')}
+                    className="flex-1 btn-primary"
+                  >
+                    Hoàn thành đơn
                   </button>
                 )}
                 {allowDelete && (
