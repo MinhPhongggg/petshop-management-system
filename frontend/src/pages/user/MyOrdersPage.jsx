@@ -8,10 +8,25 @@ const MyOrdersPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(true);
+
+    const refreshOnFocus = () => fetchOrders();
+    const intervalId = setInterval(() => {
+      if (!document.hidden) fetchOrders();
+    }, 15000);
+
+    window.addEventListener('focus', refreshOnFocus);
+    document.addEventListener('visibilitychange', refreshOnFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('focus', refreshOnFocus);
+      document.removeEventListener('visibilitychange', refreshOnFocus);
+    };
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       const response = await ordersApi.getMyOrders();
       const data = response.data;
@@ -21,19 +36,22 @@ const MyOrdersPage = () => {
       console.error('Error fetching orders:', error);
       setOrders([]);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   const getStatusBadge = (status) => {
     const normalized = (status || '').toUpperCase();
-    const isDone = normalized === 'DELIVERED' || normalized === 'COMPLETED';
-    const isCancel = normalized === 'CANCELLED';
-    const config = isCancel
-      ? { bg: 'bg-red-100', text: 'text-red-600', label: 'CANCEL' }
-      : isDone
-        ? { bg: 'bg-green-100', text: 'text-green-600', label: 'DONE' }
-        : { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'PENDING' };
+    const statusConfig = {
+      PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Chờ xác nhận' },
+      CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Đã xác nhận' },
+      PROCESSING: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Đang chuẩn bị' },
+      SHIPPING: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Đang giao' },
+      DELIVERED: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Đã giao' },
+      COMPLETED: { bg: 'bg-green-100', text: 'text-green-700', label: 'Hoàn thành' },
+      CANCELLED: { bg: 'bg-red-100', text: 'text-red-700', label: 'Đã hủy' },
+    };
+    const config = statusConfig[normalized] || statusConfig.PENDING;
 
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
