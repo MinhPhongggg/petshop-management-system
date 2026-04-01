@@ -65,7 +65,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     // Check if user has purchased a product
     @Query("SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END FROM OrderItem oi " +
-           "JOIN oi.order o WHERE o.user.id = :userId AND oi.variant.product.id = :productId AND o.status = 'COMPLETED'")
+           "JOIN oi.order o WHERE o.user.id = :userId AND oi.variant.product.id = :productId AND (o.status = 'DELIVERED' OR o.status = 'COMPLETED')")
     boolean existsByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
     
     // ==================== ANALYTICS QUERIES ====================

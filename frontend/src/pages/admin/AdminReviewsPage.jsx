@@ -57,51 +57,19 @@ const AdminReviewsPage = () => {
       }));
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      // Demo data for display
-      setReviews([
-        {
-          id: 1,
-          user: { fullName: "Nguyễn Văn A" },
-          product: { name: "Thức ăn Royal Canin" },
-          rating: 5,
-          comment: "Sản phẩm rất tốt, chó nhà mình rất thích!",
-          hidden: false,
-          adminReply: null,
-          createdAt: "2026-02-20T10:30:00",
-        },
-        {
-          id: 2,
-          user: { fullName: "Trần Thị B" },
-          product: { name: "Vòng cổ cho chó" },
-          rating: 4,
-          comment: "Chất lượng ổn, giao hàng nhanh",
-          hidden: false,
-          adminReply: "Cảm ơn bạn đã ủng hộ!",
-          createdAt: "2026-02-19T14:20:00",
-        },
-        {
-          id: 3,
-          user: { fullName: "Lê Văn C" },
-          product: { name: "Chuồng mèo cao cấp" },
-          rating: 2,
-          comment: "Sản phẩm không như mô tả",
-          hidden: true,
-          adminReply: null,
-          createdAt: "2026-02-18T09:15:00",
-        },
-        {
-          id: 4,
-          user: { fullName: "Phạm Thị D" },
-          product: { name: "Đồ chơi cho thú cưng" },
-          rating: 5,
-          comment: "Mèo nhà mình chơi cả ngày không chán!",
-          hidden: false,
-          adminReply: null,
-          createdAt: "2026-02-17T16:45:00",
-        },
-      ]);
+      setReviews([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApproveReview = async (reviewId) => {
+    try {
+      await reviewsApi.showReview(reviewId);
+      toast.success("Đã duyệt đánh giá");
+      fetchReviews();
+    } catch (error) {
+      toast.error("Không thể duyệt đánh giá");
     }
   };
 
@@ -156,11 +124,18 @@ const AdminReviewsPage = () => {
     ));
   };
 
-  const getStatusBadge = (hidden) => {
-    if (hidden) {
+  const getStatusBadge = (review) => {
+    if (review.hidden) {
       return (
         <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
           Đã ẩn
+        </span>
+      );
+    }
+    if (!review.visible) {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+          Chờ duyệt
         </span>
       );
     }
@@ -173,15 +148,15 @@ const AdminReviewsPage = () => {
 
   const filteredReviews = reviews.filter((review) => {
     const matchesSearch =
-      review.user?.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.comment?.toLowerCase().includes(searchTerm.toLowerCase());
+      review.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      review.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      review.content?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRating =
       !ratingFilter || review.rating === parseInt(ratingFilter);
     const matchesStatus =
       !statusFilter ||
       (statusFilter === "hidden" && review.hidden) ||
-      (statusFilter === "visible" && !review.hidden);
+      (statusFilter === "visible" && review.visible && !review.hidden);
     return matchesSearch && matchesRating && matchesStatus;
   });
 
@@ -267,7 +242,7 @@ const AdminReviewsPage = () => {
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <p className="text-gray-500 text-sm">Chưa phản hồi</p>
           <p className="text-2xl font-bold text-petshop-orange">
-            {reviews.filter((r) => !r.adminReply).length}
+            {reviews.filter((r) => !r.shopReply).length}
           </p>
         </div>
       </div>
@@ -285,35 +260,35 @@ const AdminReviewsPage = () => {
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4 flex-1">
                 <div className="w-12 h-12 bg-gradient-to-br from-petshop-orange to-petshop-yellow rounded-full flex items-center justify-center text-white font-medium text-lg">
-                  {review.user?.fullName?.charAt(0) || "U"}
+                  {review.userName?.charAt(0) || "U"}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-1">
                     <p className="font-semibold text-gray-800">
-                      {review.user?.fullName}
+                      {review.userName}
                     </p>
                     <div className="flex items-center gap-1">
                       {renderStars(review.rating)}
                     </div>
-                    {getStatusBadge(review.hidden)}
+                    {getStatusBadge(review)}
                   </div>
                   <p className="text-sm text-gray-500 mb-2">
                     Sản phẩm:{" "}
                     <span className="text-petshop-orange">
-                      {review.product?.name}
+                      {review.productName}
                     </span>
                     {" • "}
                     {new Date(review.createdAt).toLocaleDateString("vi-VN")}
                   </p>
-                  <p className="text-gray-600 mb-3">{review.comment}</p>
+                  <p className="text-gray-600 mb-3">{review.content}</p>
 
-                  {review.adminReply && (
+                  {review.shopReply && (
                     <div className="bg-petshop-cream rounded-xl p-4 mt-3">
                       <p className="text-sm font-medium text-gray-700 mb-1">
                         Phản hồi từ Shop:
                       </p>
                       <p className="text-gray-600 text-sm">
-                        {review.adminReply}
+                        {review.shopReply}
                       </p>
                     </div>
                   )}
@@ -321,7 +296,16 @@ const AdminReviewsPage = () => {
               </div>
 
               <div className="flex items-center gap-2">
-                {!review.adminReply && (
+                {!review.visible && !review.hidden && (
+                  <button
+                    onClick={() => handleApproveReview(review.id)}
+                    className="px-3 py-2 text-green-600 hover:bg-green-50 rounded-lg text-sm font-medium"
+                    title="Duyệt đánh giá"
+                  >
+                    Duyệt
+                  </button>
+                )}
+                {!review.shopReply && (
                   <button
                     onClick={() =>
                       setReplyModal({ open: true, review, reply: "" })
@@ -387,14 +371,14 @@ const AdminReviewsPage = () => {
             <div className="bg-gray-50 rounded-xl p-4 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="font-medium">
-                  {replyModal.review?.user?.fullName}
+                  {replyModal.review?.userName}
                 </span>
                 <div className="flex">
                   {renderStars(replyModal.review?.rating)}
                 </div>
               </div>
               <p className="text-gray-600 text-sm">
-                {replyModal.review?.comment}
+                {replyModal.review?.content}
               </p>
             </div>
 

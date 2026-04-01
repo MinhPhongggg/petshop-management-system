@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { FiStar, FiEdit2, FiTrash2, FiShoppingBag } from "react-icons/fi";
-import toast from "react-hot-toast";
+import { FiStar, FiShoppingBag } from "react-icons/fi";
 import { reviewsApi } from "../../services/api";
 
 const MyReviewsPage = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingReview, setEditingReview] = useState(null);
-  const [editForm, setEditForm] = useState({ rating: 5, comment: "" });
 
   useEffect(() => {
     fetchReviews();
@@ -21,73 +17,9 @@ const MyReviewsPage = () => {
       setReviews(response.data.content || response.data);
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      // Demo data
-      setReviews([
-        {
-          id: 1,
-          product: {
-            id: 1,
-            name: "Thức ăn Royal Canin",
-            slug: "thuc-an-royal-canin",
-            images: [
-              {
-                url: "https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=100",
-              },
-            ],
-          },
-          rating: 5,
-          comment: "Sản phẩm rất tốt, chó nhà mình rất thích!",
-          adminReply: "Cảm ơn bạn đã tin tưởng PetShop!",
-          createdAt: "2026-02-20T10:30:00",
-        },
-        {
-          id: 2,
-          product: {
-            id: 2,
-            name: "Vòng cổ cho chó",
-            slug: "vong-co-cho-cho",
-            images: [
-              {
-                url: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=100",
-              },
-            ],
-          },
-          rating: 4,
-          comment: "Chất lượng tốt, đúng như mô tả",
-          adminReply: null,
-          createdAt: "2026-02-18T14:20:00",
-        },
-      ]);
+      setReviews([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDelete = async (reviewId) => {
-    if (window.confirm("Bạn có chắc muốn xóa đánh giá này?")) {
-      try {
-        await reviewsApi.delete(reviewId);
-        toast.success("Đã xóa đánh giá");
-        fetchReviews();
-      } catch (error) {
-        toast.error("Không thể xóa đánh giá");
-      }
-    }
-  };
-
-  const handleEdit = (review) => {
-    setEditingReview(review);
-    setEditForm({ rating: review.rating, comment: review.comment });
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      await reviewsApi.update(editingReview.id, editForm);
-      toast.success("Đã cập nhật đánh giá");
-      setEditingReview(null);
-      fetchReviews();
-    } catch (error) {
-      toast.error("Không thể cập nhật đánh giá");
     }
   };
 
@@ -128,12 +60,12 @@ const MyReviewsPage = () => {
           <p className="text-gray-500 mb-6">
             Hãy mua sắm và đánh giá sản phẩm để nhận ưu đãi!
           </p>
-          <Link
-            to="/products"
+          <a
+            href="/products"
             className="btn-primary inline-flex items-center gap-2"
           >
             <FiShoppingBag /> Mua sắm ngay
-          </Link>
+          </a>
         </div>
       ) : (
         <div className="space-y-4">
@@ -146,29 +78,10 @@ const MyReviewsPage = () => {
               className="bg-white rounded-2xl shadow-sm p-6"
             >
               <div className="flex gap-4">
-                {/* Product Image */}
-                <Link
-                  to={`/products/${review.product?.slug}`}
-                  className="shrink-0"
-                >
-                  <img
-                    src={
-                      review.product?.images?.[0]?.url ||
-                      "/images/placeholder-product.jpg"
-                    }
-                    alt={review.product?.name}
-                    className="w-20 h-20 object-cover rounded-xl"
-                  />
-                </Link>
-
-                {/* Review Content */}
                 <div className="flex-1">
-                  <Link
-                    to={`/products/${review.product?.slug}`}
-                    className="font-semibold text-gray-800 hover:text-petshop-orange transition-colors"
-                  >
-                    {review.product?.name}
-                  </Link>
+                  <p className="font-semibold text-gray-800">
+                    {review.productName}
+                  </p>
 
                   <div className="flex items-center gap-2 mt-1 mb-2">
                     <div className="flex">{renderStars(review.rating)}</div>
@@ -177,9 +90,9 @@ const MyReviewsPage = () => {
                     </span>
                   </div>
 
-                  <p className="text-gray-600">{review.comment}</p>
+                  <p className="text-gray-600">{review.content}</p>
 
-                  {review.adminReply && (
+                  {review.shopReply && (
                     <div className="bg-petshop-cream rounded-xl p-4 mt-3">
                       <p className="text-sm font-medium text-gray-700 mb-1">
                         <span className="inline-flex items-center gap-1">
@@ -190,85 +103,14 @@ const MyReviewsPage = () => {
                         </span>
                       </p>
                       <p className="text-gray-600 text-sm">
-                        {review.adminReply}
+                        {review.shopReply}
                       </p>
                     </div>
                   )}
                 </div>
-
-                {/* Actions */}
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => handleEdit(review)}
-                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg"
-                    title="Chỉnh sửa"
-                  >
-                    <FiEdit2 className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(review.id)}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                    title="Xóa"
-                  >
-                    <FiTrash2 className="w-5 h-5" />
-                  </button>
-                </div>
               </div>
             </motion.div>
           ))}
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {editingReview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-lg"
-          >
-            <h3 className="text-xl font-bold text-gray-800 mb-4">
-              Chỉnh sửa đánh giá
-            </h3>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Đánh giá
-              </label>
-              <div className="flex gap-1">
-                {renderStars(editForm.rating, true, (rating) =>
-                  setEditForm((prev) => ({ ...prev, rating })),
-                )}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nhận xét
-              </label>
-              <textarea
-                value={editForm.comment}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, comment: e.target.value }))
-                }
-                rows={4}
-                className="input-field w-full"
-                placeholder="Chia sẻ trải nghiệm của bạn..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setEditingReview(null)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl"
-              >
-                Hủy
-              </button>
-              <button onClick={handleSaveEdit} className="btn-primary">
-                Lưu thay đổi
-              </button>
-            </div>
-          </motion.div>
         </div>
       )}
     </div>

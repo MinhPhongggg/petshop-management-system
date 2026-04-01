@@ -496,6 +496,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemDTO> itemDTOs = order.getItems().stream()
             .map(item -> OrderItemDTO.builder()
                 .id(item.getId())
+                .productId(item.getVariant() != null && item.getVariant().getProduct() != null ? item.getVariant().getProduct().getId() : null)
                 .variantId(item.getVariant() != null ? item.getVariant().getId() : null)
                 .productName(item.getProductName())
                 .variantName(item.getVariantName())

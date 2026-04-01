@@ -1,0 +1,104 @@
+HUONG DAN THUYET TRINH DEMO - THANH VIEN 4
+Chu de: Nguoi dung va tuong tac (Auth + Ho so Pet + Danh gia)
+
+I. THONG TIN PHAN CONG
+- Chuc nang 10: Tai khoan va phan quyen (feature/tv4-auth-security)
+- Chuc nang 11: Ho so "Boss" (feature/tv4-pet-profile)
+- Chuc nang 12: Danh gia va binh luan (feature/tv4-reviews-rating)
+
+II. MUC TIEU DEMO
+1. Chung minh he thong dang nhap/phan quyen chay dung:
+- User vao duoc trang ca nhan.
+- Admin vao duoc trang quan tri.
+
+2. Chung minh User quan ly ho so thu cung, co the sua va UP ANH PET:
+- Chon anh tu may tinh.
+- Luu thanh cong vao database MySQL.
+- Reload trang van giu duoc anh.
+
+3. Chung minh quy trinh danh gia dung nghiep vu:
+- Don hoan thanh moi duoc danh gia.
+- User viet danh gia tuy y.
+- Admin duyet danh gia.
+- Sau duyet thi hien o "Danh gia cua toi" va trang chi tiet san pham.
+
+III. KICH BAN DEMO CHI TIET
+A. DEMO AUTH + PHAN QUYEN
+B1. Mo 2 tab:
+- Tab 1: Dang nhap user.
+- Tab 2 (an danh): Dang nhap admin.
+
+B2. Tai khoan demo:
+- User: test1@gmail.com / (mat khau demo dang co)
+- Admin: admin@petshop.com / admin123
+
+B3. Trinh bay:
+- User vao duoc cac trang profile, don hang, thu cung, danh gia.
+- Admin vao duoc dashboard va cac trang quan tri (don hang, danh gia...).
+
+B. DEMO HO SO BOSS + UP ANH PET
+B1. O tab User -> vao "Thu cung cua toi".
+B2. Bam icon Sua (cay but) tren 1 pet.
+B3. Trong popup "Chinh sua thu cung":
+- Nhan vao truong "Anh thu cung".
+- Chon 1 anh tu may (JPG/PNG).
+- Anh preview hien ngay trong form.
+
+B4. Bam "Cap nhat".
+B5. Reload trang (F5) va trinh bay:
+- Anh pet van hien trong card thu cung.
+- Nghia la du lieu anh da duoc luu vao MySQL (cot image cua bang pets).
+
+B6. Neu can show DB:
+- Mo MySQL Workbench.
+- Chay: SELECT id, name, image FROM pets ORDER BY id DESC;
+- Cho thay cot image da co gia tri.
+
+C. DEMO DANH GIA & BINH LUAN END-TO-END
+B1. O tab Admin:
+- Vao Quan ly don hang.
+- Day trang thai don theo luong: PENDING -> CONFIRMED -> PROCESSING -> SHIPPING -> DELIVERED.
+
+B2. O tab User:
+- Vao "Don hang cua toi".
+- Don DELIVERED se co nut "Da nhan hang".
+- Bam xac nhan -> don thanh COMPLETED.
+
+B3. Sau khi COMPLETED:
+- Trong tung san pham cua don se hien nut "Danh gia" (nut moi ben canh thao tac).
+- Bam "Danh gia" -> mo form nhap sao + noi dung.
+- Nhap binh luan tuy y, vi du: "San pham dung mo ta, giao nhanh, se ung ho tiep".
+- Bam gui.
+
+B4. O tab Admin -> Quan ly danh gia:
+- Thay danh gia vua gui o trang thai cho duyet.
+- Bam "Duyet" de cho hien cong khai.
+- Co the Reply neu muon.
+
+B5. Quay lai tab User:
+- Vao "Danh gia cua toi" -> thay danh gia vua duoc duyet.
+- Mo trang chi tiet san pham -> thay danh gia xuat hien o tab Danh gia.
+
+IV. CAC CAU NOI THUYET TRINH GOI Y
+1. Mo dau:
+"Em phu trach nhom chuc nang Nguoi dung va Tuong tac, gom dang nhap-phan quyen,
+ ho so Boss, va danh gia binh luan."
+
+2. Luc demo up anh pet:
+"Diem moi la form sua thu cung da co tuy chon upload anh truc tiep,
+luu vao MySQL de du lieu khong bi mat khi reload."
+
+3. Luc demo danh gia:
+"He thong rang buoc nghiep vu: chi don hoan thanh moi duoc danh gia,
+ user viet noi dung tuy y, va admin co quyen duyet truoc khi hien cong khai."
+
+4. Ket:
+"Phan nay giup he thong vua than thien voi nguoi dung,
+ vua kiem soat duoc chat luong noi dung tuong tac."
+
+V. CHECKLIST TRUOC KHI BAO CAO
+- Backend dang chay: http://localhost:8080
+- Frontend dang chay: http://localhost:3000
+- Co it nhat 1 don co the day den COMPLETED de demo danh gia
+- Chuan bi san 1-2 file anh pet de upload nhanh
+- Chuan bi san noi dung comment de thao tac demo nhanh

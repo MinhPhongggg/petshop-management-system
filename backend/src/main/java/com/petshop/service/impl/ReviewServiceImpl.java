@@ -28,6 +28,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ProductRepository productRepository;
     private final BookingRepository bookingRepository;
     private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final UserRepository userRepository;
     
     @Override
@@ -40,31 +41,45 @@ public class ReviewServiceImpl implements ReviewService {
             .rating(request.getRating())
             .content(request.getContent())
             .images(request.getImages())
-            .visible(true)
+            .visible(false)
+            .hidden(false)
             .build();
         
         if (request.getProductId() != null) {
             Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại"));
-            
-            // Check if user has purchased this product
-            boolean hasPurchased = orderRepository.existsByUserIdAndProductId(
-                user.getId(), product.getId());
-            
-            if (!hasPurchased) {
-                throw new BadRequestException("Bạn chưa mua sản phẩm này");
+
+            if (request.getOrderItemId() == null) {
+                throw new BadRequestException("Vui lòng đánh giá từ sản phẩm trong đơn đã giao");
             }
-            
-            // Check if already reviewed
-            if (reviewRepository.existsByUserIdAndProductId(user.getId(), product.getId())) {
-                throw new BadRequestException("Bạn đã đánh giá sản phẩm này");
+
+            OrderItem orderItem = orderItemRepository.findById(request.getOrderItemId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm trong đơn hàng không tồn tại"));
+
+            if (!orderItem.getOrder().getUser().getId().equals(user.getId())) {
+                throw new BadRequestException("Không có quyền đánh giá sản phẩm này");
+            }
+
+            Order.OrderStatus orderStatus = orderItem.getOrder().getStatus();
+            if (orderStatus != Order.OrderStatus.DELIVERED && orderStatus != Order.OrderStatus.COMPLETED) {
+                throw new BadRequestException("Chỉ có thể đánh giá sau khi đơn hàng đã giao");
+            }
+
+            Long orderedProductId = orderItem.getVariant().getProduct().getId();
+            if (!orderedProductId.equals(product.getId())) {
+                throw new BadRequestException("Sản phẩm đánh giá không khớp với đơn hàng");
+            }
+
+            if (Boolean.TRUE.equals(orderItem.getReviewed())) {
+                throw new BadRequestException("Sản phẩm này đã được đánh giá");
             }
             
             review.setProduct(product);
+            review.setOrderItem(orderItem);
             review = reviewRepository.save(review);
-            
-            // Update product rating
-            updateProductRating(product);
+
+            orderItem.setReviewed(true);
+            orderItemRepository.save(orderItem);
             
         } else if (request.getBookingId() != null) {
             Booking booking = bookingRepository.findById(request.getBookingId())
@@ -102,7 +117,7 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public Page<ReviewDTO> getMyReviews(Pageable pageable) {
         User user = getCurrentUser();
-        return reviewRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable)
+        return reviewRepository.findByUserIdAndVisibleAndHiddenOrderByCreatedAtDesc(user.getId(), true, false, pageable)
             .map(this::mapToDTO);
     }
     
@@ -132,6 +147,7 @@ public class ReviewServiceImpl implements ReviewService {
             .orElseThrow(() -> new ResourceNotFoundException("Đánh giá không tồn tại"));
         
         review.setHidden(true);
+        review.setVisible(false);
         review = reviewRepository.save(review);
         
         // Update product rating if applicable
@@ -148,6 +164,7 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Đánh giá không tồn tại"));
         
+        review.setVisible(true);
         review.setHidden(false);
         review = reviewRepository.save(review);
         
@@ -199,6 +216,7 @@ public class ReviewServiceImpl implements ReviewService {
     private ReviewDTO mapToDTO(Review review) {
         return ReviewDTO.builder()
             .id(review.getId())
+            .userId(review.getUser().getId())
             .userName(review.getUser().getFullName())
             .userAvatar(review.getUser().getAvatar())
             .productId(review.getProduct() != null ? review.getProduct().getId() : null)
@@ -208,7 +226,9 @@ public class ReviewServiceImpl implements ReviewService {
             .content(review.getContent())
             .images(review.getImages())
             .shopReply(review.getShopReply())
+            .replyAt(review.getReplyAt())
             .visible(review.getVisible())
+            .hidden(review.getHidden())
             .createdAt(review.getCreatedAt())
             .build();
     }

@@ -1,13 +1,13 @@
 spring:
   application:
     name: petshop-backend
-  
+
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/petshop_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
-  
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,7 +15,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -48,10 +48,10 @@ logging:
 # Pet Shop Specific Configuration
 petshop:
   points:
-    earn-rate: 1000   # 1000 VND = 1 điểm
+    earn-rate: 1000 # 1000 VND = 1 điểm
     redeem-value: 100 # 1 điểm = 100 VND
-  
+
   appointment:
-    slot-duration: 30  # minutes
-    advance-booking-days: 30  # Đặt trước tối đa 30 ngày
-    min-booking-hours: 2  # Đặt trước ít nhất 2 giờ
+    slot-duration: 30 # minutes
+    advance-booking-days: 30 # Đặt trước tối đa 30 ngày
+    min-booking-hours: 2 # Đặt trước ít nhất 2 giờ

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 public class OrderItemDTO {
     
     private Long id;
+    private Long productId;
     private Long variantId;
     private String productName;
     private String variantName;

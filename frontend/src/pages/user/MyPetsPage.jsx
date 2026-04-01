@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiGift } from 'react-icons/fi';
-import { MdPets } from 'react-icons/md';
-import toast from 'react-hot-toast';
-import { petsApi } from '../../services/api';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { FiPlus, FiEdit2, FiTrash2, FiGift } from "react-icons/fi";
+import { MdPets } from "react-icons/md";
+import toast from "react-hot-toast";
+import { petsApi } from "../../services/api";
 
 const MyPetsPage = () => {
   const [pets, setPets] = useState([]);
@@ -11,23 +11,25 @@ const MyPetsPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingPet, setEditingPet] = useState(null);
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'DOG',
-    breed: '',
-    age: '',
-    weight: '',
-    gender: 'MALE',
-    birthday: '',
-    notes: '',
+    name: "",
+    type: "DOG",
+    breed: "",
+    age: "",
+    weight: "",
+    gender: "MALE",
+    birthday: "",
+    notes: "",
+    image: "",
   });
+  const [imagePreview, setImagePreview] = useState("");
 
   const petTypes = [
-    { value: 'DOG', label: 'Chó' },
-    { value: 'CAT', label: 'Mèo' },
-    { value: 'BIRD', label: 'Chim' },
-    { value: 'HAMSTER', label: 'Hamster' },
-    { value: 'RABBIT', label: 'Thỏ' },
-    { value: 'OTHER', label: 'Khác' },
+    { value: "DOG", label: "Chó" },
+    { value: "CAT", label: "Mèo" },
+    { value: "BIRD", label: "Chim" },
+    { value: "HAMSTER", label: "Hamster" },
+    { value: "RABBIT", label: "Thỏ" },
+    { value: "OTHER", label: "Khác" },
   ];
 
   useEffect(() => {
@@ -39,7 +41,7 @@ const MyPetsPage = () => {
       const response = await petsApi.getMyPets();
       setPets(response.data);
     } catch (error) {
-      console.error('Error fetching pets:', error);
+      console.error("Error fetching pets:", error);
     } finally {
       setLoading(false);
     }
@@ -47,25 +49,59 @@ const MyPetsPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSizeInMb = 5;
+    if (file.size > maxSizeInMb * 1024 * 1024) {
+      toast.error("Ảnh vượt quá 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result;
+      setFormData((prev) => ({ ...prev, image: base64 }));
+      setImagePreview(base64);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    const payload = {
+      name: formData.name,
+      type: formData.type,
+      breed: formData.breed || null,
+      age: formData.age ? String(formData.age) : null,
+      weight: formData.weight === '' ? null : Number(formData.weight),
+      notes: formData.notes || null,
+      birthday: formData.birthday || null,
+      image: formData.image || null,
+    };
+
     try {
       if (editingPet) {
-        await petsApi.update(editingPet.id, formData);
-        toast.success('Cập nhật thú cưng thành công!');
+        await petsApi.update(editingPet.id, payload);
+        toast.success("Cập nhật thú cưng thành công!");
       } else {
-        await petsApi.create(formData);
-        toast.success('Thêm thú cưng thành công!');
+        await petsApi.create(payload);
+        toast.success("Thêm thú cưng thành công!");
       }
       fetchPets();
       setShowModal(false);
       resetForm();
     } catch (error) {
-      toast.error('Có lỗi xảy ra');
+      const message =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === 'string' ? error.response.data : null) ||
+        'Có lỗi xảy ra';
+      toast.error(message);
     }
   };
 
@@ -73,25 +109,27 @@ const MyPetsPage = () => {
     setEditingPet(pet);
     setFormData({
       name: pet.name,
-      type: pet.petType || pet.type,  // BE returns petType
+      type: pet.petType || pet.type, // BE returns petType
       breed: pet.breed,
       age: pet.age,
       weight: pet.weight,
       gender: pet.gender,
-      birthday: pet.birthday || '',
-      notes: pet.notes || '',
+      birthday: pet.birthday || "",
+      notes: pet.notes || "",
+      image: pet.avatarUrl || pet.image || "",
     });
+    setImagePreview(pet.avatarUrl || pet.image || "");
     setShowModal(true);
   };
 
   const handleDelete = async (petId) => {
-    if (window.confirm('Bạn có chắc muốn xóa thú cưng này?')) {
+    if (window.confirm("Bạn có chắc muốn xóa thú cưng này?")) {
       try {
         await petsApi.delete(petId);
-        toast.success('Đã xóa thú cưng');
+        toast.success("Đã xóa thú cưng");
         fetchPets();
       } catch (error) {
-        toast.error('Không thể xóa thú cưng');
+        toast.error("Không thể xóa thú cưng");
       }
     }
   };
@@ -99,19 +137,21 @@ const MyPetsPage = () => {
   const resetForm = () => {
     setEditingPet(null);
     setFormData({
-      name: '',
-      type: 'DOG',
-      breed: '',
-      age: '',
-      weight: '',
-      gender: 'MALE',
-      birthday: '',
-      notes: '',
+      name: "",
+      type: "DOG",
+      breed: "",
+      age: "",
+      weight: "",
+      gender: "MALE",
+      birthday: "",
+      notes: "",
+      image: "",
     });
+    setImagePreview("");
   };
 
   const getPetTypeLabel = (type) => {
-    const petType = petTypes.find(t => t.value === type);
+    const petType = petTypes.find((t) => t.value === type);
     return petType ? petType.label : type;
   };
 
@@ -141,12 +181,13 @@ const MyPetsPage = () => {
       {pets.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center">
           <MdPets className="text-6xl text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-800 mb-2">Chưa có thú cưng</h3>
-          <p className="text-gray-500 mb-6">Thêm thú cưng để quản lý và đặt lịch dễ dàng hơn</p>
-          <button
-            onClick={() => setShowModal(true)}
-            className="btn-primary"
-          >
+          <h3 className="text-lg font-medium text-gray-800 mb-2">
+            Chưa có thú cưng
+          </h3>
+          <p className="text-gray-500 mb-6">
+            Thêm thú cưng để quản lý và đặt lịch dễ dàng hơn
+          </p>
+          <button onClick={() => setShowModal(true)} className="btn-primary">
             Thêm thú cưng đầu tiên
           </button>
         </div>
@@ -161,7 +202,7 @@ const MyPetsPage = () => {
               className="bg-white rounded-2xl shadow-sm overflow-hidden"
             >
               <div className="relative h-48">
-                {(pet.avatarUrl || pet.image) ? (
+                {pet.avatarUrl || pet.image ? (
                   <img
                     src={pet.avatarUrl || pet.image}
                     alt={pet.name}
@@ -188,24 +229,33 @@ const MyPetsPage = () => {
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">{pet.name}</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  {pet.name}
+                </h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <p className="text-gray-500">
-                    <span className="font-medium text-gray-700">Loại:</span> {getPetTypeLabel(pet.petType || pet.type)}
+                    <span className="font-medium text-gray-700">Loại:</span>{" "}
+                    {getPetTypeLabel(pet.petType || pet.type)}
                   </p>
                   <p className="text-gray-500">
-                    <span className="font-medium text-gray-700">Giống:</span> {pet.breed}
+                    <span className="font-medium text-gray-700">Giống:</span>{" "}
+                    {pet.breed}
                   </p>
                   <p className="text-gray-500">
-                    <span className="font-medium text-gray-700">Tuổi:</span> {pet.age} tuổi
+                    <span className="font-medium text-gray-700">Tuổi:</span>{" "}
+                    {pet.age} tuổi
                   </p>
                   <p className="text-gray-500">
-                    <span className="font-medium text-gray-700">Cân nặng:</span> {pet.weight} kg
+                    <span className="font-medium text-gray-700">Cân nặng:</span>{" "}
+                    {pet.weight} kg
                   </p>
                   {pet.birthday && (
                     <p className="text-gray-500 col-span-2 flex items-center gap-1">
                       <FiGift className="text-pink-500" />
-                      <span className="font-medium text-gray-700">Sinh nhật:</span> {new Date(pet.birthday).toLocaleDateString('vi-VN')}
+                      <span className="font-medium text-gray-700">
+                        Sinh nhật:
+                      </span>{" "}
+                      {new Date(pet.birthday).toLocaleDateString("vi-VN")}
                     </p>
                   )}
                 </div>
@@ -229,9 +279,9 @@ const MyPetsPage = () => {
             className="bg-white rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto"
           >
             <h2 className="text-xl font-bold text-gray-800 mb-6">
-              {editingPet ? 'Chỉnh sửa thú cưng' : 'Thêm thú cưng mới'}
+              {editingPet ? "Chỉnh sửa thú cưng" : "Thêm thú cưng mới"}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -260,7 +310,7 @@ const MyPetsPage = () => {
                     className="input-field"
                     required
                   >
-                    {petTypes.map(type => (
+                    {petTypes.map((type) => (
                       <option key={type.value} value={type.value}>
                         {type.label}
                       </option>
@@ -295,6 +345,31 @@ const MyPetsPage = () => {
                   className="input-field"
                   placeholder="VD: Poodle, Anh lông ngắn..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ảnh thú cưng
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="input-field"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Hỗ trợ JPG/PNG/WEBP, tối đa 5MB. Ảnh sẽ được lưu vào MySQL.
+                </p>
+
+                {(imagePreview || formData.image) && (
+                  <div className="mt-3">
+                    <img
+                      src={imagePreview || formData.image}
+                      alt="Preview pet"
+                      className="w-28 h-28 rounded-xl object-cover border"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -339,9 +414,11 @@ const MyPetsPage = () => {
                   value={formData.birthday}
                   onChange={handleChange}
                   className="input-field"
-                  max={new Date().toISOString().split('T')[0]}
+                  max={new Date().toISOString().split("T")[0]}
                 />
-                <p className="text-xs text-gray-400 mt-1">Thú cưng sẽ nhận voucher đặc biệt vào ngày sinh nhật!</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Thú cưng sẽ nhận voucher đặc biệt vào ngày sinh nhật!
+                </p>
               </div>
 
               <div>
@@ -370,7 +447,7 @@ const MyPetsPage = () => {
                   Hủy
                 </button>
                 <button type="submit" className="flex-1 btn-primary">
-                  {editingPet ? 'Cập nhật' : 'Thêm mới'}
+                  {editingPet ? "Cập nhật" : "Thêm mới"}
                 </button>
               </div>
             </form>

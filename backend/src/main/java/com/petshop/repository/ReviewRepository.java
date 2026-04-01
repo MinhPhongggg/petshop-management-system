@@ -19,6 +19,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     // Đánh giá của user
     Page<Review> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    Page<Review> findByUserIdAndVisibleAndHiddenOrderByCreatedAtDesc(Long userId, Boolean visible, Boolean hidden, Pageable pageable);
     
     // Tính rating trung bình của sản phẩm
     @Query("SELECT COALESCE(AVG(r.rating), 0) FROM Review r WHERE r.product.id = :productId AND r.visible = true AND r.hidden = false")
