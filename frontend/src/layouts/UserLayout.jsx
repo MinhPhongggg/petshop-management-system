@@ -10,13 +10,13 @@ const UserLayout = () => {
   const { user, logout } = useAuthStore();
 
   const menuItems = [
-    { path: '/profile', icon: FiUser, label: 'Thông tin cá nhân' },
-    { path: '/my-orders', icon: FiPackage, label: 'Đơn hàng của tôi' },
-    { path: '/my-bookings', icon: FiCalendar, label: 'Lịch hẹn của tôi' },
-    { path: '/my-pets', icon: MdPets, label: 'Thú cưng của tôi' },
-    { path: '/my-rewards', icon: FiGift, label: 'Tích điểm & Ưu đãi' },
-    { path: '/my-vouchers', icon: FiTag, label: 'Ví Voucher' },
-    { path: '/my-reviews', icon: FiStar, label: 'Đánh giá của tôi' },
+    { path: "/profile", icon: FiUser, label: "Thông tin cá nhân" },
+    { path: "/my-orders", icon: FiPackage, label: "Đơn hàng của tôi" },
+    { path: "/my-bookings", icon: FiCalendar, label: "Lịch hẹn của tôi" },
+    { path: "/my-pets", icon: MdPets, label: "Thú cưng của tôi" },
+    { path: "/my-rewards", icon: FiGift, label: "Tích điểm & Ưu đãi" },
+    { path: "/my-vouchers", icon: FiTag, label: "Ví Voucher" },
+    { path: "/my-reviews", icon: FiStar, label: "Đánh giá của tôi" },
   ];
 
   const handleLogout = () => {

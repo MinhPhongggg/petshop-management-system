@@ -18,6 +18,7 @@ import {
   FiTruck,
   FiClipboard,
   FiChevronDown,
+  FiStar,
 } from 'react-icons/fi';
 import { MdPets, MdSpa } from 'react-icons/md';
 
@@ -39,6 +40,7 @@ const AdminLayout = () => {
     { path: '/admin/services', icon: MdSpa, label: 'Dịch vụ' },
     { path: '/admin/users', icon: FiUsers, label: 'Người dùng' },
     { path: '/admin/vouchers', icon: FiTag, label: 'Voucher' },
+    { path: '/admin/reviews', icon: FiStar, label: 'Đánh giá' },
   ];
   const inventoryItems = [
     { path: '/admin/inventory', icon: FiDatabase, label: 'Kho hàng' },

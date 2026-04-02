@@ -275,6 +275,23 @@ public class OrderServiceImpl implements OrderService {
         return mapToDTO(order);
     }
 
+    @Override
+    @Transactional
+    public OrderDTO confirmReceivedOrder(Long id) {
+        User user = getCurrentUser();
+        Order order = getOrderEntity(id);
+
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new BadRequestException("Không có quyền truy cập");
+        }
+
+        if (order.getStatus() != Order.OrderStatus.DELIVERED) {
+            throw new BadRequestException("Chỉ có thể xác nhận nhận hàng khi đơn đã được giao");
+        }
+
+        return completeOrder(id);
+    }
+
     // === Admin/Staff Methods ===
 
     @Override
@@ -511,6 +528,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemDTO> itemDTOs = order.getItems().stream()
             .map(item -> OrderItemDTO.builder()
                 .id(item.getId())
+                .productId(item.getVariant() != null && item.getVariant().getProduct() != null ? item.getVariant().getProduct().getId() : null)
                 .variantId(item.getVariant() != null ? item.getVariant().getId() : null)
                 .productName(item.getProductName())
                 .variantName(item.getVariantName())

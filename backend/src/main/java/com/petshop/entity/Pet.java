@@ -49,6 +49,7 @@ public class Pet {
     private String notes;
 
     // Ảnh
+    @Column(columnDefinition = "LONGTEXT")
     private String image;
 
     // Chủ sở hữu

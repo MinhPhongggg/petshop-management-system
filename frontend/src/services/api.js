@@ -14,10 +14,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
-    const requestUrl = config.url || '';
+    const requestUrl = config.url || "";
     const isPublicAuthEndpoint =
-      requestUrl.startsWith('/auth/login') ||
-      requestUrl.startsWith('/auth/register');
+      requestUrl.startsWith("/auth/login") ||
+      requestUrl.startsWith("/auth/register");
 
     if (token && !isPublicAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -34,10 +34,10 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      const requestUrl = error.config?.url || '';
+      const requestUrl = error.config?.url || "";
       const isPublicAuthEndpoint =
-        requestUrl.startsWith('/auth/login') ||
-        requestUrl.startsWith('/auth/register');
+        requestUrl.startsWith("/auth/login") ||
+        requestUrl.startsWith("/auth/register");
 
       // Token expired or invalid (avoid redirect loops on login/register)
       if (!isPublicAuthEndpoint) {
@@ -45,7 +45,7 @@ api.interceptors.response.use(
         // Only logout if we were previously authenticated (avoid loop on fresh load)
         if (store.isAuthenticated) {
           store.logout();
-          window.location.href = '/login';
+          window.location.href = "/login";
         }
       }
     }
@@ -83,14 +83,12 @@ export const productsApi = {
   create: (data) => api.post("/products", data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
-  toggleActive: (id) => api.patch(`/products/${id}/toggle-active`),
 };
 
 // Categories API
 export const categoriesApi = {
   getAll: () => api.get("/categories"),
   getTree: () => api.get("/categories/tree"),
-  getAdminTree: () => api.get("/categories/admin/tree"),
   getById: (id) => api.get(`/categories/${id}`),
   getBySlug: (slug) => api.get(`/categories/slug/${slug}`),
   getByPetType: (petType) => api.get(`/categories/pet-type/${petType}`),
@@ -158,6 +156,7 @@ export const ordersApi = {
   getByCode: (code) => api.get(`/orders/code/${code}`),
   cancel: (id, reason) =>
     api.post(`/orders/${id}/cancel`, null, { params: { reason } }),
+  confirmReceived: (id) => api.post(`/orders/${id}/confirm-received`),
   // Admin
   getAll: (params) => api.get("/orders", { params }),
   getByStatus: (status, params) =>
@@ -174,24 +173,27 @@ export const ordersApi = {
     api.post(`/orders/${id}/payment-status`, null, {
       params: { status, transactionId },
     }),
-  delete: (id) => api.delete(`/orders/${id}`),
-  updateStatus: (id, newStatus) => {
-    const status = String(newStatus || '').toUpperCase();
-    switch (status) {
-      case 'CONFIRMED':
-        return ordersApi.confirm(id);
-      case 'PROCESSING':
-        return ordersApi.process(id);
-      case 'SHIPPING':
-        return ordersApi.ship(id);
-      case 'DELIVERED':
-        return ordersApi.deliver(id);
-      case 'COMPLETED':
-        return ordersApi.complete(id);
-      case 'CANCELLED':
-        return ordersApi.adminCancel(id, 'Admin hủy đơn');
+  updateStatus: (id, status, extra = {}) => {
+    const normalized = String(status || "").toUpperCase();
+    switch (normalized) {
+      case "CONFIRMED":
+        return api.post(`/orders/${id}/confirm`);
+      case "PROCESSING":
+        return api.post(`/orders/${id}/process`);
+      case "SHIPPING":
+        return api.post(`/orders/${id}/ship`, null, {
+          params: { trackingNumber: extra.trackingNumber },
+        });
+      case "DELIVERED":
+        return api.post(`/orders/${id}/deliver`);
+      case "COMPLETED":
+        return api.post(`/orders/${id}/complete`);
+      case "CANCELLED":
+        return api.post(`/orders/${id}/admin-cancel`, null, {
+          params: { reason: extra.reason || "Hủy bởi quản trị viên" },
+        });
       default:
-        return Promise.reject(new Error(`Unsupported order status: ${newStatus}`));
+        throw new Error(`Unsupported status update: ${normalized}`);
     }
   },
 };
@@ -230,11 +232,13 @@ export const dashboardApi = {
 
 // Analytics API (Admin) - Thống kê & Báo cáo nâng cao
 export const analyticsApi = {
-  getFullAnalytics: () => api.get('/analytics'),
-  getFullAnalyticsByRange: (startDate, endDate) => api.get('/analytics/range', { params: { startDate, endDate } }),
-  getServiceAnalytics: (startDate, endDate) => api.get('/analytics/services', { params: { startDate, endDate } }),
-  getInventoryAnalytics: () => api.get('/analytics/inventory'),
-  getPetAnalytics: () => api.get('/analytics/pets'),
+  getFullAnalytics: () => api.get("/analytics"),
+  getFullAnalyticsByRange: (startDate, endDate) =>
+    api.get("/analytics/range", { params: { startDate, endDate } }),
+  getServiceAnalytics: (startDate, endDate) =>
+    api.get("/analytics/services", { params: { startDate, endDate } }),
+  getInventoryAnalytics: () => api.get("/analytics/inventory"),
+  getPetAnalytics: () => api.get("/analytics/pets"),
 };
 
 // Reports API (Admin)
@@ -252,20 +256,22 @@ export const reportsApi = {
 // Vouchers API
 export const vouchersApi = {
   // Public
-  getActive: () => api.get('/vouchers/active'),
+  getActive: () => api.get("/vouchers/active"),
   getByCode: (code) => api.get(`/vouchers/code/${code}`),
-  apply: (code, orderAmount) => api.post('/vouchers/apply', null, { params: { code, orderAmount } }),
+  apply: (code, orderAmount) =>
+    api.post("/vouchers/apply", null, { params: { code, orderAmount } }),
   // Customer wallet
   saveVoucher: (id) => api.post(`/vouchers/save/${id}`),
   unsaveVoucher: (id) => api.delete(`/vouchers/unsave/${id}`),
-  getMySaved: () => api.get('/vouchers/my-saved'),
+  getMySaved: () => api.get("/vouchers/my-saved"),
   // Admin
-  getAll: (params) => api.get('/vouchers', { params }),
+  getAll: (params) => api.get("/vouchers", { params }),
   getById: (id) => api.get(`/vouchers/${id}`),
-  create: (data) => api.post('/vouchers', data),
+  create: (data) => api.post("/vouchers", data),
   update: (id, data) => api.put(`/vouchers/${id}`, data),
   delete: (id) => api.delete(`/vouchers/${id}`),
-  getUsageHistory: (id, params) => api.get(`/vouchers/${id}/usage-history`, { params }),
+  getUsageHistory: (id, params) =>
+    api.get(`/vouchers/${id}/usage-history`, { params }),
 };
 
 // Users API (Admin)
@@ -273,9 +279,10 @@ export const usersApi = {
   getAll: (params) => api.get("/users", { params }),
   getById: (id) => api.get(`/users/${id}`),
   update: (id, data) => api.put(`/users/${id}`, data),
-  updateRole: (id, role) => api.put(`/users/${id}/role`, null, { params: { role } }),
-  updateStatus: (id, active) =>
-    api.put(`/users/${id}/status`, null, { params: { active } }),
+  updateRole: (id, role) =>
+    api.put(`/users/${id}/role`, null, { params: { role } }),
+  updateStatus: (id, status) =>
+    api.put(`/users/${id}/status`, null, { params: { status } }),
   delete: (id) => api.delete(`/users/${id}`),
 };
 

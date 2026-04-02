@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 // Layout
@@ -24,20 +29,21 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 
 // User Pages
-import ProfilePage from './pages/user/ProfilePage';
-import MyOrdersPage from './pages/user/MyOrdersPage';
-import MyBookingsPage from './pages/user/MyBookingsPage';
-import BookingDetailPage from './pages/user/BookingDetailPage';
-import MyPetsPage from './pages/user/MyPetsPage';
-import MyRewardsPage from './pages/user/MyRewardsPage';
-import MyVouchersPage from './pages/user/MyVouchersPage';
-import MyReviewsPage from './pages/user/MyReviewsPage';
+import ProfilePage from "./pages/user/ProfilePage";
+import MyOrdersPage from "./pages/user/MyOrdersPage";
+import MyBookingsPage from "./pages/user/MyBookingsPage";
+import BookingDetailPage from "./pages/user/BookingDetailPage";
+import MyPetsPage from "./pages/user/MyPetsPage";
+import MyRewardsPage from "./pages/user/MyRewardsPage";
+import MyVouchersPage from "./pages/user/MyVouchersPage";
+import MyReviewsPage from "./pages/user/MyReviewsPage";
 
 // Admin Pages
 import DashboardPage from './pages/admin/DashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminProductFormPage from './pages/admin/AdminProductFormPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
+import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminSalesPage from './pages/admin/AdminSalesPage';
 import AdminBookingsPage from './pages/admin/AdminBookingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
@@ -143,7 +149,10 @@ function App() {
           <Route path="products/:id/edit" element={<AdminProductFormPage />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="sales" element={<AdminSalesPage />} />
-          <Route path="orders" element={<Navigate to="/admin/sales" replace />} />
+          <Route
+            path="orders"
+            element={<Navigate to="/admin/sales" replace />}
+          />
           <Route path="bookings" element={<AdminBookingsPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="services" element={<AdminServicesPage />} />
