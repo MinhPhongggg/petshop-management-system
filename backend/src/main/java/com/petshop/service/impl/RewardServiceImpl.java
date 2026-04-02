@@ -53,6 +53,23 @@ public class RewardServiceImpl implements RewardService {
     }
 
     @Override
+    public List<RewardProgressDTO.TierStatus> getPublicTiers() {
+        List<RewardTier> allTiers = rewardTierRepository.findByActiveTrueOrderByTierOrderAsc();
+        return allTiers.stream().map(t -> RewardProgressDTO.TierStatus.builder()
+                .id(t.getId())
+                .name(t.getName())
+                .displayName(t.getDisplayName())
+                .icon(t.getIcon())
+                .color(t.getColor())
+                .minSpending(t.getMinSpending())
+                .discountPercent(t.getDiscountPercent())
+                .maxDiscount(t.getMaxDiscount())
+                .tierOrder(t.getTierOrder())
+                .unlocked(false)
+                .build()).collect(Collectors.toList());
+    }
+
+    @Override
     public RewardProgressDTO getUserRewardProgress(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

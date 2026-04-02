@@ -145,4 +145,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    "GROUP BY p.id, p.name, p.type, p.breed, u.full_name " +
                    "ORDER BY service_spending DESC LIMIT 10", nativeQuery = true)
     List<Object[]> getVipPetServiceSpending();
+
+    // Deposit expiration: tìm booking DEPOSIT_PENDING đã hết hạn
+    List<Booking> findByStatusAndDepositExpiresAtBefore(Booking.BookingStatus status, LocalDateTime now);
 }

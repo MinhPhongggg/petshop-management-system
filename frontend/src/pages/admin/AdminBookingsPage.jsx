@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FiSearch, FiEye, FiCheck, FiX, FiCalendar, FiClock, FiPlay } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
-import { bookingsApi } from '../../services/api';
+import { bookingsApi, paymentsApi } from '../../services/api';
 
 const AdminBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
@@ -122,12 +122,38 @@ const AdminBookingsPage = () => {
     { id: 'IN_PROGRESS', label: 'Đang thực hiện' },
     { id: 'COMPLETED', label: 'Hoàn thành' },
     { id: 'CANCELLED', label: 'Đã hủy' },
+    { id: 'DEPOSIT_PENDING', label: 'Chờ cọc' },
     { id: 'NO_SHOW', label: 'Không đến' },
   ];
+
+  const getDepositBadge = (depositStatus) => {
+    const config = {
+      NONE: null,
+      PENDING: { bg: 'bg-pink-100', text: 'text-pink-600', label: 'Chờ cọc' },
+      PAID: { bg: 'bg-green-100', text: 'text-green-600', label: 'Đã cọc' },
+      EXPIRED: { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Hết hạn cọc' },
+      REFUNDED: { bg: 'bg-orange-100', text: 'text-orange-600', label: 'Đã hoàn cọc' },
+    };
+    const c = config[depositStatus];
+    if (!c) return null;
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{c.label}</span>;
+  };
+
+  const handleRefundDeposit = async (bookingId) => {
+    if (!window.confirm('Bạn có chắc muốn hoàn cọc cho lịch hẹn này?')) return;
+    try {
+      await paymentsApi.refundDeposit(bookingId, 'Admin hủy lịch - hoàn cọc');
+      toast.success('Hoàn cọc thành công');
+      fetchBookings();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Hoàn cọc thất bại');
+    }
+  };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
       PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'Chờ xác nhận' },
+      DEPOSIT_PENDING: { bg: 'bg-pink-100', text: 'text-pink-600', label: 'Chờ thanh toán cọc' },
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Đã xác nhận' },
       IN_PROGRESS: { bg: 'bg-purple-100', text: 'text-purple-600', label: 'Đang thực hiện' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Hoàn thành' },
@@ -295,6 +321,15 @@ const AdminBookingsPage = () => {
                   </div>
                 </div>
 
+                {booking.depositStatus && booking.depositStatus !== 'NONE' && (
+                  <div className="flex items-center gap-2 text-sm">
+                    {getDepositBadge(booking.depositStatus)}
+                    {booking.depositAmount > 0 && (
+                      <span className="text-gray-500">Cọc: {formatPrice(booking.depositAmount)}</span>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-3 border-t">
                   <span className="font-bold text-petshop-orange">{formatPrice(booking.price)}</span>
                   <div className="flex gap-1">
@@ -305,15 +340,17 @@ const AdminBookingsPage = () => {
                     >
                       <FiEye />
                     </button>
-                    {booking.status === 'PENDING' && (
+                    {(booking.status === 'PENDING' || booking.status === 'DEPOSIT_PENDING') && (
                       <>
-                        <button
-                          onClick={() => handleConfirm(booking.id)}
-                          className="p-2 text-gray-500 hover:text-green-500 hover:bg-green-50 rounded-lg"
-                          title="Xác nhận"
-                        >
-                          <FiCheck />
-                        </button>
+                        {booking.status === 'PENDING' && (
+                          <button
+                            onClick={() => handleConfirm(booking.id)}
+                            className="p-2 text-gray-500 hover:text-green-500 hover:bg-green-50 rounded-lg"
+                            title="Xác nhận"
+                          >
+                            <FiCheck />
+                          </button>
+                        )}
                         <button
                           onClick={() => setShowCancelModal(booking.id)}
                           className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg"
@@ -483,6 +520,39 @@ const AdminBookingsPage = () => {
                 </div>
               )}
 
+              {/* Deposit Info */}
+              {selectedBooking.depositStatus && selectedBooking.depositStatus !== 'NONE' && (
+                <div className="bg-pink-50 rounded-xl p-4">
+                  <h3 className="font-medium text-gray-800 mb-2">Thông tin đặt cọc</h3>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Trạng thái:</span>
+                      {getDepositBadge(selectedBooking.depositStatus)}
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Số tiền cọc:</span>
+                      <span className="font-medium text-pink-600">{formatPrice(selectedBooking.depositAmount)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Còn lại:</span>
+                      <span className="font-medium">{formatPrice(selectedBooking.remainingAmount)}</span>
+                    </div>
+                    {selectedBooking.depositPaidAt && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Thanh toán lúc:</span>
+                        <span>{new Date(selectedBooking.depositPaidAt).toLocaleString('vi-VN')}</span>
+                      </div>
+                    )}
+                    {selectedBooking.momoTransactionId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Mã GD MoMo:</span>
+                        <span className="font-mono text-xs">{selectedBooking.momoTransactionId}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Price */}
               <div className="flex items-center justify-between pt-4 border-t">
                 <span className="text-lg font-medium text-gray-800">Tổng cộng</span>
@@ -508,6 +578,22 @@ const AdminBookingsPage = () => {
                       Hủy lịch
                     </button>
                   </>
+                )}
+                {selectedBooking.status === 'DEPOSIT_PENDING' && (
+                  <button
+                    onClick={() => { setShowCancelModal(selectedBooking.id); }}
+                    className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
+                  >
+                    Hủy lịch
+                  </button>
+                )}
+                {selectedBooking.depositStatus === 'PAID' && (selectedBooking.status === 'CANCELLED' || selectedBooking.status === 'NO_SHOW') && (
+                  <button
+                    onClick={() => handleRefundDeposit(selectedBooking.id)}
+                    className="flex-1 px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600"
+                  >
+                    Hoàn tiền cọc
+                  </button>
                 )}
                 {selectedBooking.status === 'CONFIRMED' && (
                   <>

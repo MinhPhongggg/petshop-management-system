@@ -3,12 +3,19 @@ package com.petshop.service;
 import com.petshop.dto.response.RewardProgressDTO;
 import com.petshop.dto.response.VoucherDTO;
 
+import java.util.List;
+
 public interface RewardService {
 
     /**
      * Lấy tiến trình tích điểm/hạng thưởng của user đang đăng nhập
      */
     RewardProgressDTO getMyRewardProgress();
+
+    /**
+     * Lấy danh sách tiers công khai (không cần đăng nhập)
+     */
+    List<RewardProgressDTO.TierStatus> getPublicTiers();
 
     /**
      * Lấy tiến trình tích điểm của user bất kỳ (admin)

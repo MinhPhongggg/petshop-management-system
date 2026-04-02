@@ -59,3 +59,19 @@ petshop:
     slot-duration: 30 # minutes
     advance-booking-days: 30 # Đặt trước tối đa 30 ngày
     min-booking-hours: 2 # Đặt trước ít nhất 2 giờ
+
+  deposit:
+    percentage: 30 # Tỷ lệ cọc 30% tổng giá dịch vụ
+    min-amount: 50000 # Số tiền cọc tối thiểu (VND)
+    timeout-minutes: 15 # Hết hạn thanh toán sau 15 phút
+    refund-before-hours: 24 # Hoàn 100% nếu hủy trước 24h
+
+# MoMo Payment Configuration (Sandbox/Test)
+momo:
+  partner-code: ${MOMO_PARTNER_CODE:MOMOBKUN20180529}
+  access-key: ${MOMO_ACCESS_KEY:klm05TvNBzhg7h7j}
+  secret-key: ${MOMO_SECRET_KEY:at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa}
+  api-url: ${MOMO_API_URL:https://test-payment.momo.vn/v2/gateway/api}
+  redirect-url: ${MOMO_REDIRECT_URL:http://localhost:3000/booking/momo-result}
+  ipn-url: ${MOMO_IPN_URL:http://localhost:8080/api/payments/momo/ipn}
+  mock-enabled: ${MOMO_MOCK_ENABLED:false}

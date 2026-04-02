@@ -60,10 +60,13 @@ public class RewardController {
      * Lấy danh sách tiers (công khai)
      */
     @GetMapping("/tiers")
-    public ResponseEntity<RewardProgressDTO> getTiers() {
-        // Trả về progress mặc định nếu chưa đăng nhập 
-        // (sẽ handle ở frontend nếu 401)
-        return ResponseEntity.ok(rewardService.getMyRewardProgress());
+    public ResponseEntity<?> getTiers() {
+        try {
+            return ResponseEntity.ok(rewardService.getMyRewardProgress());
+        } catch (Exception e) {
+            // Nếu chưa đăng nhập, trả về danh sách tiers cơ bản
+            return ResponseEntity.ok(rewardService.getPublicTiers());
+        }
     }
 
     /**

@@ -55,6 +55,9 @@ import AdminSuppliersPage from './pages/admin/AdminSuppliersPage';
 import AdminPurchaseOrdersPage from './pages/admin/AdminPurchaseOrdersPage';
 import AdminStockAuditPage from './pages/admin/AdminStockAuditPage';
 import AdminReportsPage from './pages/admin/AdminReportsPage';
+import MoMoPaymentPage from './pages/MoMoPaymentPage';
+import MoMoBookingDepositPage from './pages/MoMoBookingDepositPage';
+import MoMoBookingResultPage from './pages/MoMoBookingResultPage';
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -90,6 +93,29 @@ function App() {
       />
 
       <Routes>
+        {/* MoMo Payment - standalone page (no MainLayout) */}
+        <Route
+          path="/payment/momo/:orderId"
+          element={
+            <ProtectedRoute>
+              <MoMoPaymentPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* MoMo Booking Deposit - standalone page */}
+        <Route
+          path="/booking/momo-deposit/:bookingId"
+          element={
+            <ProtectedRoute>
+              <MoMoBookingDepositPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* MoMo Booking Deposit Result (redirect from real MoMo) */}
+        <Route path="/booking/momo-result" element={<MoMoBookingResultPage />} />
+
         {/* Public Routes */}
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />

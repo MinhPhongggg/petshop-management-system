@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs, Zoom } from 'swiper/modules';
-import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
+import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiTruck, FiShield, FiRefreshCw, FiAward } from 'react-icons/fi';
 import { useCartStore } from '../store/cartStore';
 import ProductCard from '../components/product/ProductCard';
 import { productsApi, rewardsApi } from '../services/api';
@@ -98,6 +98,18 @@ const ProductDetailPage = () => {
     }
   };
 
+  const getImageUrl = (url) => {
+    if (url && url.startsWith('/images/')) {
+      return url;
+    }
+    return url || '/images/paw-pattern.svg';
+  };
+
+  const handleImageError = (e) => {
+    e.target.onerror = null;
+    e.target.src = '/images/paw-pattern.svg';
+  };
+
   const handleClaimWatchVoucher = async () => {
     if (!product?.id || watchSeconds < 30 || watchVoucherClaimed || claimingWatchVoucher) {
       return;
@@ -170,8 +182,9 @@ const ProductDetailPage = () => {
                   <SwiperSlide key={image.id || index}>
                     <div className="swiper-zoom-container">
                       <img
-                        src={image.imageUrl}
+                        src={getImageUrl(image.imageUrl)}
                         alt={`${product.name} - ${index + 1}`}
+                        onError={handleImageError}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -190,8 +203,9 @@ const ProductDetailPage = () => {
                 {product.images?.map((image, index) => (
                   <SwiperSlide key={image.id || index}>
                     <img
-                      src={image.imageUrl}
+                      src={getImageUrl(image.imageUrl)}
                       alt={`Thumb ${index + 1}`}
+                      onError={handleImageError}
                       className="w-full h-full object-cover rounded-xl cursor-pointer border-2 border-transparent hover:border-petshop-orange transition-colors"
                     />
                   </SwiperSlide>
@@ -320,6 +334,17 @@ const ProductDetailPage = () => {
                     {selectedVariant?.stock || 100} sản phẩm có sẵn
                   </span>
                 </div>
+                {/* Điểm tích lũy */}
+                {isAuthenticated && isCustomer && (() => {
+                  const unitPrice = selectedVariant?.price || product.salePrice || product.basePrice || 0;
+                  const earnedPoints = Math.floor((unitPrice * quantity) / 1000);
+                  return earnedPoints > 0 ? (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-xl">
+                      <FiAward className="w-4 h-4" />
+                      <span>Tích lũy <strong>+{earnedPoints.toLocaleString('vi-VN')}</strong> điểm thưởng</span>
+                    </div>
+                  ) : null;
+                })()}
               </div>
 
               {/* Actions */}
