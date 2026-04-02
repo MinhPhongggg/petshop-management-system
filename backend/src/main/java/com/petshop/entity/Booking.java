@@ -82,6 +82,36 @@ public class Booking {
     @Column(name = "cancel_reason", columnDefinition = "TEXT")
     private String cancelReason;
 
+    // === Deposit (Đặt cọc) ===
+    @Enumerated(EnumType.STRING)
+    @Column(name = "deposit_status")
+    @Builder.Default
+    private DepositStatus depositStatus = DepositStatus.NONE;
+
+    // Số tiền cọc
+    @Column(name = "deposit_amount", precision = 12, scale = 2)
+    private BigDecimal depositAmount;
+
+    // Số tiền còn lại
+    @Column(name = "remaining_amount", precision = 12, scale = 2)
+    private BigDecimal remainingAmount;
+
+    // Mã giao dịch MoMo
+    @Column(name = "momo_transaction_id", length = 100)
+    private String momoTransactionId;
+
+    // Mã đơn hàng gửi MoMo (duy nhất)
+    @Column(name = "momo_order_id", length = 100, unique = true)
+    private String momoOrderId;
+
+    // Thời hạn thanh toán cọc
+    @Column(name = "deposit_expires_at")
+    private LocalDateTime depositExpiresAt;
+
+    // Thời gian thanh toán cọc
+    @Column(name = "deposit_paid_at")
+    private LocalDateTime depositPaidAt;
+
     // Thời gian xác nhận
     @Column(name = "confirmed_at")
     private LocalDateTime confirmedAt;
@@ -104,10 +134,19 @@ public class Booking {
 
     public enum BookingStatus {
         PENDING,        // Chờ xác nhận
-        CONFIRMED,      // Đã xác nhận
+        DEPOSIT_PENDING, // Chờ thanh toán cọc
+        CONFIRMED,      // Đã xác nhận (đã cọc)
         IN_PROGRESS,    // Đang thực hiện
         COMPLETED,      // Hoàn thành
         CANCELLED,      // Đã hủy
         NO_SHOW         // Khách không đến
+    }
+
+    public enum DepositStatus {
+        NONE,           // Không yêu cầu cọc
+        PENDING,        // Chờ thanh toán cọc
+        PAID,           // Đã cọc
+        EXPIRED,        // Hết hạn thanh toán
+        REFUNDED        // Đã hoàn cọc
     }
 }

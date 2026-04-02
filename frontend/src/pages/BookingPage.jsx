@@ -5,7 +5,7 @@ import { FiCalendar, FiClock, FiUser, FiCheck, FiAlertCircle } from 'react-icons
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
-import { servicesApi, petsApi, bookingsApi } from '../services/api';
+import { servicesApi, petsApi, bookingsApi, paymentsApi } from '../services/api';
 
 const BookingPage = () => {
   const [searchParams] = useSearchParams();
@@ -32,6 +32,7 @@ const BookingPage = () => {
     petType: 'DOG',
     petBreed: '',
     petWeight: '',
+    payWithDeposit: true, // Mặc định đặt cọc MoMo
   });
 
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -133,7 +134,7 @@ const BookingPage = () => {
 
     setSubmitting(true);
     try {
-      await bookingsApi.create({
+      const bookingResponse = await bookingsApi.create({
         serviceId: parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id,
         petId: (formData.petId && formData.petId !== 'new') ? parseInt(formData.petId) : null,
         bookingDate: formData.date,
@@ -149,6 +150,37 @@ const BookingPage = () => {
           weight: parseFloat(formData.petWeight) || null,
         } : null,
       });
+
+      const createdBooking = bookingResponse.data;
+
+      // Nếu chọn đặt cọc MoMo
+      if (formData.payWithDeposit && isAuthenticated) {
+        try {
+          const depositResponse = await paymentsApi.createBookingDeposit(createdBooking.id);
+          const depositData = depositResponse.data;
+
+          if (depositData.mockMode) {
+            // Mock mode → chuyển đến trang thanh toán mock
+            navigate(`/booking/momo-deposit/${createdBooking.id}`, {
+              state: {
+                booking: createdBooking,
+                deposit: depositData,
+              }
+            });
+          } else if (depositData.payUrl) {
+            // Real MoMo → chuyển đến trang deposit rồi mở cổng thanh toán thật
+            navigate(`/booking/momo-deposit/${createdBooking.id}`, {
+              state: {
+                booking: createdBooking,
+                deposit: depositData,
+              }
+            });
+          }
+          return;
+        } catch (depositError) {
+          toast.error(depositError.response?.data?.message || 'Không thể tạo thanh toán cọc. Lịch hẹn đã tạo, bạn có thể thanh toán sau.');
+        }
+      }
 
       toast.success('Đặt lịch thành công! Chúng tôi sẽ liên hệ xác nhận.');
       navigate('/');
@@ -590,18 +622,103 @@ const BookingPage = () => {
                         </>
                       )}
                       <hr className="border-gray-300" />
-                      <div className="flex justify-between text-lg">
-                        <span className="font-semibold">Tạm tính</span>
-                        <span className="font-bold text-petshop-green">
-                          {formatPrice(selectedService?.pricingList?.[0]?.price || 0)}
-                        </span>
-                      </div>
+                      {(() => {
+                        const totalPrice = selectedService?.pricingList?.[0]?.price || 0;
+                        const depositAmount = Math.max(Math.ceil(totalPrice * 0.3), 50000);
+                        const remainingAmount = totalPrice - depositAmount;
+                        return (
+                          <>
+                            <div className="flex justify-between text-lg">
+                              <span className="font-semibold">Tổng tiền dịch vụ</span>
+                              <span className="font-bold text-gray-800">
+                                {formatPrice(totalPrice)}
+                              </span>
+                            </div>
+
+                            {/* Deposit Option */}
+                            {isAuthenticated && (
+                              <div className="mt-2">
+                                <h3 className="font-semibold text-gray-800 mb-3">Phương thức xác nhận</h3>
+                                
+                                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all mb-3 ${
+                                  formData.payWithDeposit
+                                    ? 'border-pink-500 bg-pink-50'
+                                    : 'border-gray-200 hover:border-pink-300'
+                                }`}>
+                                  <input
+                                    type="radio"
+                                    name="payWithDeposit"
+                                    checked={formData.payWithDeposit}
+                                    onChange={() => setFormData(prev => ({ ...prev, payWithDeposit: true }))}
+                                    className="w-5 h-5 text-pink-500 mt-0.5"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-gray-800">Đặt cọc qua MoMo</span>
+                                      <span className="bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full">Khuyên dùng</span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      Cọc 30% ({formatPrice(depositAmount)}) để xác nhận giữ chỗ ngay.
+                                      Còn lại {formatPrice(remainingAmount)} thanh toán tại cửa hàng.
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo" className="h-6 w-6 object-contain" />
+                                      <span className="text-sm text-pink-600 font-medium">Thanh toán an toàn qua Ví MoMo</span>
+                                    </div>
+                                  </div>
+                                  <span className="font-bold text-pink-600 text-lg whitespace-nowrap">
+                                    {formatPrice(depositAmount)}
+                                  </span>
+                                </label>
+
+                                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                                  !formData.payWithDeposit
+                                    ? 'border-petshop-green bg-green-50'
+                                    : 'border-gray-200 hover:border-gray-300'
+                                }`}>
+                                  <input
+                                    type="radio"
+                                    name="payWithDeposit"
+                                    checked={!formData.payWithDeposit}
+                                    onChange={() => setFormData(prev => ({ ...prev, payWithDeposit: false }))}
+                                    className="w-5 h-5 text-petshop-green mt-0.5"
+                                  />
+                                  <div className="flex-1">
+                                    <span className="font-semibold text-gray-800">Chờ xác nhận (không cọc)</span>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút. Lịch hẹn có thể bị hủy nếu hết chỗ.
+                                    </p>
+                                  </div>
+                                </label>
+                              </div>
+                            )}
+
+                            {formData.payWithDeposit && isAuthenticated && (
+                              <div className="bg-pink-50 border border-pink-200 rounded-xl p-4 mt-2">
+                                <h4 className="font-semibold text-pink-700 mb-2">Chi tiết thanh toán</h4>
+                                <div className="flex justify-between text-sm mb-1">
+                                  <span className="text-gray-600">Đặt cọc ngay (30%)</span>
+                                  <span className="font-semibold text-pink-600">{formatPrice(depositAmount)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm mb-2">
+                                  <span className="text-gray-600">Thanh toán tại cửa hàng</span>
+                                  <span className="font-semibold">{formatPrice(remainingAmount)}</span>
+                                </div>
+                                <hr className="border-pink-200 my-2" />
+                                <p className="text-xs text-gray-500">
+                                  Hoàn 100% tiền cọc nếu hủy trước 24h. Không hoàn cọc nếu hủy trong vòng 24h trước giờ hẹn.
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
 
                   <p className="text-sm text-gray-500 mb-6">
                     * Giá có thể thay đổi tùy theo cân nặng và tình trạng thú cưng. 
-                    Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút.
+                    {!formData.payWithDeposit && ' Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút.'}
                   </p>
                 </div>
               )}
@@ -630,9 +747,17 @@ const BookingPage = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="btn-primary flex-1 disabled:opacity-50"
+                    className={`flex-1 disabled:opacity-50 font-semibold py-3 rounded-xl transition-all ${
+                      formData.payWithDeposit && isAuthenticated
+                        ? 'bg-pink-500 hover:bg-pink-600 text-white'
+                        : 'btn-primary'
+                    }`}
                   >
-                    {submitting ? 'Đang xử lý...' : 'Xác nhận đặt lịch'}
+                    {submitting
+                      ? 'Đang xử lý...'
+                      : formData.payWithDeposit && isAuthenticated
+                        ? 'Đặt cọc & Xác nhận qua MoMo'
+                        : 'Xác nhận đặt lịch'}
                   </button>
                 )}
               </div>

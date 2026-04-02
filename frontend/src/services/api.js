@@ -198,6 +198,17 @@ export const ordersApi = {
   },
 };
 
+// ===== PAYMENTS API =====
+export const paymentsApi = {
+  mockMomo: (orderId) => api.post(`/payments/momo/${orderId}`),
+  createMomoOrder: (orderId) => api.post(`/payments/momo/order/${orderId}/create`),
+  // MoMo Booking Deposit
+  createBookingDeposit: (bookingId) => api.post(`/payments/momo/booking/${bookingId}/deposit`),
+  confirmMockDeposit: (bookingId) => api.post(`/payments/momo/booking/${bookingId}/confirm-mock`),
+  refundDeposit: (bookingId, reason) => api.post(`/payments/momo/booking/${bookingId}/refund`, null, { params: { reason } }),
+  getRedirectResult: (params) => api.get('/payments/momo/redirect', { params }),
+};
+
 // Pets API
 export const petsApi = {
   getMyPets: () => api.get("/pets"),
@@ -241,6 +252,18 @@ export const analyticsApi = {
   getPetAnalytics: () => api.get("/analytics/pets"),
 };
 
+// Reports API (Admin)
+export const reportsApi = {
+  getBusinessReport: (startDate, endDate, topLimit = 10) =>
+    api.get('/reports/business', { params: { startDate, endDate, topLimit } }),
+  exportBusinessExcel: (startDate, endDate, topLimit = 10) =>
+    api.get('/reports/business/export/excel', { params: { startDate, endDate, topLimit }, responseType: 'blob' }),
+  exportBusinessPdf: (startDate, endDate, topLimit = 10) =>
+    api.get('/reports/business/export/pdf', { params: { startDate, endDate, topLimit }, responseType: 'blob' }),
+  drilldownOrders: (startDate, endDate) =>
+    api.get('/reports/business/drilldown/orders', { params: { startDate, endDate } }),
+};
+
 // Vouchers API
 export const vouchersApi = {
   // Public
@@ -276,9 +299,68 @@ export const usersApi = {
 
 // Rewards API
 export const rewardsApi = {
-  getMyProgress: () => api.get("/rewards/my-progress"),
-  getTiers: () => api.get("/rewards/tiers"),
+  getMyProgress: () => api.get('/rewards/my-progress'),
+  getMyPoints: () => api.get('/rewards/my-points'),
+  requestViewPointsCode: () => api.post('/rewards/my-points/request-code'),
+  verifyViewPointsCode: (verificationCode) =>
+    api.post('/rewards/my-points/verify', { verificationCode }),
+  getTiers: () => api.get('/rewards/tiers'),
   getUserProgress: (userId) => api.get(`/rewards/user/${userId}`),
+  claimWatchVoucher: (productId, watchedSeconds) =>
+    api.post('/rewards/vouchers/watch-product', { productId, watchedSeconds }),
+  requestRedeemCode: (pointsToRedeem) =>
+    api.post('/rewards/vouchers/redeem/request-code', { pointsToRedeem }),
+  confirmRedeemPoints: (pointsToRedeem, verificationCode) =>
+    api.post('/rewards/vouchers/redeem/confirm', { pointsToRedeem, verificationCode }),
+};
+
+// Suppliers API (Admin)
+export const suppliersApi = {
+  getAll: (params) => api.get('/suppliers', { params }),
+  getActive: () => api.get('/suppliers/active'),
+  getById: (id) => api.get(`/suppliers/${id}`),
+  create: (data) => api.post('/suppliers', data),
+  update: (id, data) => api.put(`/suppliers/${id}`, data),
+  toggleActive: (id) => api.patch(`/suppliers/${id}/toggle-active`),
+  delete: (id) => api.delete(`/suppliers/${id}`),
+};
+
+// Inventory API (Admin)
+export const inventoryApi = {
+  importStock: (data) => api.post('/inventory/import', data),
+  exportStock: (data) => api.post('/inventory/export', data),
+  adjustStock: (data) => api.post('/inventory/adjust', data),
+  getMovements: (variantId, params) => api.get(`/inventory/movements/${variantId}`, { params }),
+  getLowStock: () => api.get('/inventory/low-stock'),
+  getOutOfStock: () => api.get('/inventory/out-of-stock'),
+  getOverStock: () => api.get('/inventory/over-stock'),
+  getExpiring: () => api.get('/inventory/expiring'),
+};
+
+// Stock Audits API (Admin)
+export const stockAuditsApi = {
+  getAll: (params) => api.get('/stock-audits', { params }),
+  getById: (id) => api.get(`/stock-audits/${id}`),
+  create: (data) => api.post('/stock-audits', data),
+  start: (id) => api.post(`/stock-audits/${id}/start`),
+  updateCounts: (id, data) => api.put(`/stock-audits/${id}/counts`, data),
+  complete: (id) => api.post(`/stock-audits/${id}/complete`),
+  cancel: (id) => api.post(`/stock-audits/${id}/cancel`),
+  delete: (id) => api.delete(`/stock-audits/${id}`),
+};
+
+// Purchase Orders API (Admin)
+export const purchaseOrdersApi = {
+  getAll: (params) => api.get('/purchase-orders', { params }),
+  getByStatus: (status, params) => api.get(`/purchase-orders/status/${status}`, { params }),
+  getById: (id) => api.get(`/purchase-orders/${id}`),
+  create: (data) => api.post('/purchase-orders', data),
+  update: (id, data) => api.put(`/purchase-orders/${id}`, data),
+  submit: (id) => api.post(`/purchase-orders/${id}/submit`),
+  approve: (id) => api.post(`/purchase-orders/${id}/approve`),
+  receive: (id) => api.post(`/purchase-orders/${id}/receive`),
+  cancel: (id) => api.post(`/purchase-orders/${id}/cancel`),
+  delete: (id) => api.delete(`/purchase-orders/${id}`),
 };
 
 // Import API (Admin)

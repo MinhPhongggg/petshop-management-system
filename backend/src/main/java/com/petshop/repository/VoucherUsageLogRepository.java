@@ -21,4 +21,9 @@ public interface VoucherUsageLogRepository extends JpaRepository<VoucherUsageLog
 
     // Lịch sử dùng voucher của user
     List<VoucherUsageLog> findByUserIdOrderByUsedAtDesc(Long userId);
+
+    @Query("SELECT COUNT(v), COALESCE(SUM(v.discountAmount),0), COALESCE(SUM(v.orderAmount),0) " +
+            "FROM VoucherUsageLog v WHERE v.usedAt BETWEEN :startDate AND :endDate")
+    Object[] getVoucherImpact(@Param("startDate") java.time.LocalDateTime startDate,
+                              @Param("endDate") java.time.LocalDateTime endDate);
 }

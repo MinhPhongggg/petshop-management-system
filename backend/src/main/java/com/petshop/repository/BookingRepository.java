@@ -145,9 +145,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    "GROUP BY p.id, p.name, p.type, p.breed, u.full_name " +
                    "ORDER BY service_spending DESC LIMIT 10", nativeQuery = true)
     List<Object[]> getVipPetServiceSpending();
-    
+
     // Tìm bookings COMPLETED để gửi nhắc nhở spa
-    // Hỗ trợ cả booking có completedAt và không có (fallback sang bookingDate)
     @Query("SELECT b FROM Booking b " +
            "JOIN FETCH b.user u " +
            "JOIN FETCH b.pet p " +
@@ -164,7 +163,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                                     @Param("endDate") LocalDateTime endDate,
                                                     @Param("startLocalDate") LocalDate startLocalDate,
                                                     @Param("endLocalDate") LocalDate endLocalDate);
-    // Tìm TẤT CẢ bookings COMPLETED chưa gửi nhắc nhở (dùng cho admin xem danh sách eligible)
+
     @Query("SELECT b FROM Booking b " +
            "JOIN FETCH b.user u " +
            "JOIN FETCH b.pet p " +
@@ -173,4 +172,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
            "AND u.active = true " +
            "AND NOT EXISTS (SELECT r FROM SpaReminderLog r WHERE r.booking.id = b.id) " +
            "ORDER BY COALESCE(b.completedAt, CAST(b.bookingDate AS timestamp)) DESC")
-    List<Booking> findAllCompletedNotReminded();}
+    List<Booking> findAllCompletedNotReminded();
+
+    // Deposit expiration: tìm booking DEPOSIT_PENDING đã hết hạn
+    List<Booking> findByStatusAndDepositExpiresAtBefore(Booking.BookingStatus status, LocalDateTime now);
+}
