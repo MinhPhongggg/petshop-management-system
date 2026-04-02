@@ -6,8 +6,9 @@ import { Navigation, Thumbs, Zoom } from 'swiper/modules';
 import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import { useCartStore } from '../store/cartStore';
 import ProductCard from '../components/product/ProductCard';
-import { productsApi } from '../services/api';
+import { productsApi, rewardsApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
@@ -23,9 +24,13 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
+  const [watchSeconds, setWatchSeconds] = useState(0);
+  const [watchVoucherClaimed, setWatchVoucherClaimed] = useState(false);
+  const [claimingWatchVoucher, setClaimingWatchVoucher] = useState(false);
   
   const { addItem, addItemLocal } = useCartStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const isCustomer = user?.role === 'CUSTOMER';
 
   const fetchProduct = useCallback(async () => {
     setLoading(true);
@@ -51,6 +56,23 @@ const ProductDetailPage = () => {
     fetchProduct();
   }, [fetchProduct]);
 
+  useEffect(() => {
+    setWatchSeconds(0);
+    setWatchVoucherClaimed(false);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isCustomer || !product?.id || watchVoucherClaimed) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      setWatchSeconds((prev) => Math.min(prev + 1, 30));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isAuthenticated, isCustomer, product?.id, watchVoucherClaimed]);
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -73,6 +95,22 @@ const ProductDetailPage = () => {
     } else {
       addItemLocal(product, selectedVariant, quantity);
       navigate('/checkout');
+    }
+  };
+
+  const handleClaimWatchVoucher = async () => {
+    if (!product?.id || watchSeconds < 30 || watchVoucherClaimed || claimingWatchVoucher) {
+      return;
+    }
+    try {
+      setClaimingWatchVoucher(true);
+      const res = await rewardsApi.claimWatchVoucher(product.id, watchSeconds);
+      setWatchVoucherClaimed(true);
+      toast.success(`Đã nhận voucher ${res.data.code}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể nhận voucher');
+    } finally {
+      setClaimingWatchVoucher(false);
     }
   };
 
@@ -306,6 +344,40 @@ const ProductDetailPage = () => {
                   <FiShare2 className="w-5 h-5" />
                 </button>
               </div>
+
+              {isAuthenticated && isCustomer && (
+                <div className="mb-8 p-4 rounded-2xl border border-amber-200 bg-amber-50">
+                  <p className="text-sm text-amber-800 font-medium mb-2">
+                    Xem sản phẩm đủ 30 giây để nhận voucher thưởng
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-2 rounded-full bg-amber-100 overflow-hidden">
+                      <div
+                        className="h-full bg-amber-500 transition-all"
+                        style={{ width: `${Math.min((watchSeconds / 30) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-amber-700 font-semibold">{watchSeconds}/30s</span>
+                  </div>
+                  <button
+                    onClick={handleClaimWatchVoucher}
+                    disabled={watchSeconds < 30 || watchVoucherClaimed || claimingWatchVoucher}
+                    className={`mt-3 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                      watchVoucherClaimed
+                        ? 'bg-green-100 text-green-700'
+                        : watchSeconds < 30 || claimingWatchVoucher
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-amber-500 text-white hover:bg-amber-600'
+                    }`}
+                  >
+                    {watchVoucherClaimed
+                      ? 'Đã nhận voucher'
+                      : claimingWatchVoucher
+                        ? 'Đang nhận...'
+                        : 'Nhận voucher 30s'}
+                  </button>
+                </div>
+              )}
 
               {/* Benefits */}
               <div className="grid grid-cols-3 gap-4">

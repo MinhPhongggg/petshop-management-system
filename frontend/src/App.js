@@ -38,13 +38,17 @@ import DashboardPage from './pages/admin/DashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminProductFormPage from './pages/admin/AdminProductFormPage';
 import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
-import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminSalesPage from './pages/admin/AdminSalesPage';
 import AdminBookingsPage from './pages/admin/AdminBookingsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminServicesPage from './pages/admin/AdminServicesPage';
 import AdminVouchersPage from './pages/admin/AdminVouchersPage';
 import AdminReviewsPage from './pages/admin/AdminReviewsPage';
+import AdminInventoryPage from './pages/admin/AdminInventoryPage';
+import AdminSuppliersPage from './pages/admin/AdminSuppliersPage';
+import AdminPurchaseOrdersPage from './pages/admin/AdminPurchaseOrdersPage';
+import AdminStockAuditPage from './pages/admin/AdminStockAuditPage';
+import AdminReportsPage from './pages/admin/AdminReportsPage';
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -133,6 +137,7 @@ function App() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="reports" element={<AdminReportsPage />} />
           <Route path="products" element={<AdminProductsPage />} />
           <Route path="products/new" element={<AdminProductFormPage />} />
           <Route path="products/:id/edit" element={<AdminProductFormPage />} />
@@ -143,6 +148,10 @@ function App() {
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="services" element={<AdminServicesPage />} />
           <Route path="vouchers" element={<AdminVouchersPage />} />
+          <Route path="inventory" element={<AdminInventoryPage />} />
+          <Route path="suppliers" element={<AdminSuppliersPage />} />
+          <Route path="purchase-orders" element={<AdminPurchaseOrdersPage />} />
+          <Route path="stock-audits" element={<AdminStockAuditPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
         </Route>
       </Routes>

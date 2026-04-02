@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiPlus, FiEdit2, FiTrash2, FiChevronRight, FiChevronDown, 
@@ -121,7 +121,7 @@ const AdminCategoriesPage = () => {
   }, [categories]);
 
   // Filter logic
-  const filterCategories = (cats) => {
+  const filterCategories = useCallback((cats) => {
     return cats.reduce((acc, cat) => {
       const matchesSearch = !searchTerm || 
         cat.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -137,12 +137,12 @@ const AdminCategoriesPage = () => {
       }
       return acc;
     }, []);
-  };
+  }, [searchTerm, filterStatus]);
 
   const filteredCategories = useMemo(() => {
     if (!searchTerm && !filterStatus) return categories;
     return filterCategories(categories);
-  }, [categories, searchTerm, filterStatus]);
+  }, [categories, searchTerm, filterStatus, filterCategories]);
 
   const toggleExpand = (id) => {
     setExpandedIds(prev => {
