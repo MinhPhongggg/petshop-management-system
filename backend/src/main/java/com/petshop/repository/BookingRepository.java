@@ -4,9 +4,12 @@ import com.petshop.entity.Booking;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -67,4 +70,110 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     
     // Recent bookings for dashboard
     List<Booking> findTop5ByOrderByCreatedAtDesc();
+<<<<<<< Updated upstream
+=======
+    
+    // ==================== ANALYTICS QUERIES ====================
+    
+    // Thống kê booking theo giờ trong ngày (tỷ lệ lấp đầy)
+    @Query(value = "SELECT HOUR(start_time) as hour, COUNT(*) as cnt " +
+                   "FROM bookings WHERE status NOT IN ('CANCELLED', 'NO_SHOW') " +
+                   "AND booking_date BETWEEN :startDate AND :endDate " +
+                   "GROUP BY HOUR(start_time) ORDER BY hour", nativeQuery = true)
+    List<Object[]> countBookingsByHour(@Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate);
+    
+    // Thống kê booking theo ngày (7 ngày gần nhất)
+    @Query(value = "SELECT booking_date, COUNT(*) as cnt " +
+                   "FROM bookings WHERE status NOT IN ('CANCELLED', 'NO_SHOW') " +
+                   "AND booking_date BETWEEN :startDate AND :endDate " +
+                   "GROUP BY booking_date ORDER BY booking_date", nativeQuery = true)
+    List<Object[]> countBookingsByDay(@Param("startDate") LocalDate startDate,
+                                      @Param("endDate") LocalDate endDate);
+    
+    // Hiệu suất theo nhân viên (groomer) - số ca, doanh thu
+    @Query(value = "SELECT b.staff_id, u.full_name, COUNT(*) as total_bookings, " +
+                   "SUM(CASE WHEN b.status = 'COMPLETED' THEN 1 ELSE 0 END) as completed, " +
+                   "COALESCE(SUM(CASE WHEN b.status = 'COMPLETED' THEN b.price ELSE 0 END), 0) as revenue " +
+                   "FROM bookings b JOIN users u ON b.staff_id = u.id " +
+                   "WHERE b.staff_id IS NOT NULL " +
+                   "AND b.booking_date BETWEEN :startDate AND :endDate " +
+                   "GROUP BY b.staff_id, u.full_name ORDER BY revenue DESC", nativeQuery = true)
+    List<Object[]> getGroomerPerformance(@Param("startDate") LocalDate startDate,
+                                         @Param("endDate") LocalDate endDate);
+    
+    // Dịch vụ phổ biến nhất - so sánh doanh thu giữa các dịch vụ
+    @Query(value = "SELECT b.service_id, s.name, COUNT(*) as booking_count, " +
+                   "COALESCE(SUM(CASE WHEN b.status = 'COMPLETED' THEN b.price ELSE 0 END), 0) as revenue " +
+                   "FROM bookings b JOIN spa_services s ON b.service_id = s.id " +
+                   "WHERE b.status NOT IN ('CANCELLED', 'NO_SHOW') " +
+                   "AND b.booking_date BETWEEN :startDate AND :endDate " +
+                   "GROUP BY b.service_id, s.name ORDER BY booking_count DESC", nativeQuery = true)
+    List<Object[]> getPopularServices(@Param("startDate") LocalDate startDate,
+                                       @Param("endDate") LocalDate endDate);
+    
+    // Đếm booking hoàn thành
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.status = 'COMPLETED'")
+    Long countCompleted();
+
+    @Query("SELECT COUNT(b) FROM Booking b " +
+           "WHERE b.pet.id = :petId " +
+           "AND b.service.id = :serviceId " +
+           "AND b.status = 'COMPLETED' " +
+           "AND b.paymentStatus = 'PAID' " +
+           "AND b.promotionConsumed = false " +
+           "AND b.promotionReward = false")
+    long countEligibleCompletedForPromotion(@Param("petId") Long petId,
+                                            @Param("serviceId") Long serviceId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT b FROM Booking b " +
+           "WHERE b.pet.id = :petId " +
+           "AND b.service.id = :serviceId " +
+           "AND b.status = 'COMPLETED' " +
+           "AND b.paymentStatus = 'PAID' " +
+           "AND b.promotionConsumed = false " +
+           "AND b.promotionReward = false " +
+           "AND b.id <> :excludeBookingId " +
+           "ORDER BY b.completedAt ASC, b.id ASC")
+    List<Booking> findEligibleCompletedForPromotionWithLock(@Param("petId") Long petId,
+                                                            @Param("serviceId") Long serviceId,
+                                                            @Param("excludeBookingId") Long excludeBookingId,
+                                                            Pageable pageable);
+    
+    // Đếm booking bị hủy
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.status IN ('CANCELLED', 'NO_SHOW')")
+    Long countCancelled();
+    
+    // Chu kỳ chăm sóc - lấy tất cả booking của pet theo thời gian
+    @Query(value = "SELECT b.user_id, u.full_name, p.name as pet_name, p.type as pet_type, " +
+                   "COUNT(*) as total_visits, " +
+                   "GROUP_CONCAT(b.booking_date ORDER BY b.booking_date SEPARATOR ',') as visit_dates " +
+                   "FROM bookings b " +
+                   "JOIN users u ON b.user_id = u.id " +
+                   "JOIN pets p ON b.pet_id = p.id " +
+                   "WHERE b.status NOT IN ('CANCELLED', 'NO_SHOW') " +
+                   "GROUP BY b.user_id, u.full_name, p.id, p.name, p.type " +
+                   "HAVING COUNT(*) >= 2 " +
+                   "ORDER BY total_visits DESC", nativeQuery = true)
+    List<Object[]> getCustomerRetentionData();
+    
+    // Rating trung bình theo nhân viên
+    @Query(value = "SELECT b.staff_id, COALESCE(AVG(r.rating), 0) as avg_rating " +
+                   "FROM bookings b LEFT JOIN reviews r ON r.booking_id = b.id " +
+                   "WHERE b.staff_id IS NOT NULL AND r.id IS NOT NULL " +
+                   "GROUP BY b.staff_id", nativeQuery = true)
+    List<Object[]> getStaffAverageRatings();
+    
+    // VIP Pet - tổng chi tiêu dịch vụ theo pet
+    @Query(value = "SELECT p.id as pet_id, p.name as pet_name, p.type as pet_type, p.breed, " +
+                   "u.full_name as owner_name, COUNT(b.id) as total_bookings, " +
+                   "COALESCE(SUM(CASE WHEN b.status = 'COMPLETED' THEN b.price ELSE 0 END), 0) as service_spending " +
+                   "FROM pets p " +
+                   "JOIN users u ON p.owner_id = u.id " +
+                   "LEFT JOIN bookings b ON b.pet_id = p.id " +
+                   "GROUP BY p.id, p.name, p.type, p.breed, u.full_name " +
+                   "ORDER BY service_spending DESC LIMIT 10", nativeQuery = true)
+    List<Object[]> getVipPetServiceSpending();
+>>>>>>> Stashed changes
 }

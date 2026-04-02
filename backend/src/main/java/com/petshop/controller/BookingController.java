@@ -1,7 +1,9 @@
 package com.petshop.controller;
 
 import com.petshop.dto.request.BookingRequest;
+import com.petshop.dto.response.BookingCompletionPreviewDTO;
 import com.petshop.dto.response.BookingDTO;
+import com.petshop.dto.response.BookingPromotionProgressDTO;
 import com.petshop.entity.Booking;
 import com.petshop.service.BookingService;
 import jakarta.validation.Valid;
@@ -38,6 +40,12 @@ public class BookingController {
     public ResponseEntity<Page<BookingDTO>> getMyBookings(
             @PageableDefault(size = 10, sort = "bookingDate", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(bookingService.getMyBookings(pageable));
+    }
+
+    @GetMapping("/promotion-progress")
+    public ResponseEntity<BookingPromotionProgressDTO> getPromotionProgress(@RequestParam Long petId,
+                                                                            @RequestParam Long serviceId) {
+        return ResponseEntity.ok(bookingService.getPromotionProgress(petId, serviceId));
     }
     
     @GetMapping("/{id}")
@@ -106,6 +114,18 @@ public class BookingController {
     public ResponseEntity<BookingDTO> completeBooking(@PathVariable Long id, 
                                                        @RequestParam(required = false) String staffNote) {
         return ResponseEntity.ok(bookingService.completeBooking(id, staffNote));
+    }
+
+    @GetMapping("/{id}/payment-preview")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
+    public ResponseEntity<BookingCompletionPreviewDTO> previewPayment(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.previewPaymentPrice(id));
+    }
+
+    @PostMapping("/{id}/pay")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
+    public ResponseEntity<BookingDTO> payBooking(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.payBooking(id));
     }
     
     @PostMapping("/{id}/admin-cancel")

@@ -93,17 +93,37 @@ export const bookingsApi = {
   getMyBookings: (params) => api.get('/bookings/my-bookings', { params }),
   getById: (id) => api.get(`/bookings/${id}`),
   getByCode: (code) => api.get(`/bookings/code/${code}`),
+<<<<<<< Updated upstream
   cancel: (id, reason) => api.post(`/bookings/${id}/cancel`, null, { params: { reason } }),
   checkAvailability: (date, startTime, endTime) => 
     api.get('/bookings/check-availability', { params: { date, startTime, endTime } }),
+=======
+  getPromotionProgress: (petId, serviceId) =>
+    api.get("/bookings/promotion-progress", { params: { petId, serviceId } }),
+  cancel: (id, reason) =>
+    api.post(`/bookings/${id}/cancel`, null, { params: { reason } }),
+  checkAvailability: (date, startTime, endTime) =>
+    api.get("/bookings/check-availability", {
+      params: { date, startTime, endTime },
+    }),
+>>>>>>> Stashed changes
   // Admin
   getAll: (params) => api.get('/bookings', { params }),
   getByDate: (date) => api.get(`/bookings/date/${date}`),
   getByStatus: (status, params) => api.get(`/bookings/status/${status}`, { params }),
   confirm: (id) => api.post(`/bookings/${id}/confirm`),
   start: (id) => api.post(`/bookings/${id}/start`),
+<<<<<<< Updated upstream
   complete: (id, staffNote) => api.post(`/bookings/${id}/complete`, null, { params: { staffNote } }),
   adminCancel: (id, reason) => api.post(`/bookings/${id}/admin-cancel`, null, { params: { reason } }),
+=======
+  previewPayment: (id) => api.get(`/bookings/${id}/payment-preview`),
+  pay: (id) => api.post(`/bookings/${id}/pay`),
+  complete: (id, staffNote) =>
+    api.post(`/bookings/${id}/complete`, null, { params: { staffNote } }),
+  adminCancel: (id, reason) =>
+    api.post(`/bookings/${id}/admin-cancel`, null, { params: { reason } }),
+>>>>>>> Stashed changes
   markNoShow: (id) => api.post(`/bookings/${id}/no-show`),
   assignStaff: (id, staffId) => api.post(`/bookings/${id}/assign-staff`, null, { params: { staffId } }),
 };

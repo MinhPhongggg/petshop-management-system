@@ -36,7 +36,83 @@ const AdminBookingsPage = () => {
       fetchBookings();
       setSelectedBooking(null);
     } catch (error) {
+<<<<<<< Updated upstream
       toast.error('Không thể cập nhật trạng thái');
+=======
+      toast.error(error.response?.data?.message || 'Không thể xác nhận lịch hẹn');
+    }
+  };
+
+  const handleStart = async (bookingId) => {
+    try {
+      await bookingsApi.start(bookingId);
+      toast.success('Đã bắt đầu thực hiện dịch vụ');
+      fetchBookings();
+      setSelectedBooking(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể bắt đầu dịch vụ');
+    }
+  };
+
+  const handleComplete = async (bookingId) => {
+    try {
+      await bookingsApi.complete(bookingId);
+      toast.success('Đã hoàn thành dịch vụ');
+      fetchBookings();
+      setSelectedBooking(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể hoàn thành dịch vụ');
+    }
+  };
+
+  const handlePayBooking = async (booking) => {
+    try {
+      const previewRes = await bookingsApi.previewPayment(booking.id);
+      const preview = previewRes.data;
+
+      const confirmMessage = preview.willBeFree
+        ? `Booking này đủ điều kiện khuyến mãi 3 tặng 1 (cùng dịch vụ). Số tiền thanh toán: ${formatPrice(preview.finalPrice)}. Xác nhận thanh toán?`
+        : `Số tiền cần thanh toán: ${formatPrice(preview.finalPrice)}. Xác nhận thanh toán?`;
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      await bookingsApi.pay(booking.id);
+      toast.success(preview.willBeFree ? 'Đã áp dụng miễn phí và thanh toán thành công' : 'Thanh toán thành công');
+      fetchBookings();
+      setSelectedBooking(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể thanh toán booking');
+    }
+  };
+
+  const handleAdminCancel = async (bookingId) => {
+    if (!cancelReason.trim()) {
+      toast.error('Vui lòng nhập lý do hủy');
+      return;
+    }
+    try {
+      await bookingsApi.adminCancel(bookingId, cancelReason);
+      toast.success('Đã hủy lịch hẹn');
+      setCancelReason('');
+      setShowCancelModal(null);
+      fetchBookings();
+      setSelectedBooking(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể hủy lịch hẹn');
+    }
+  };
+
+  const handleMarkNoShow = async (bookingId) => {
+    try {
+      await bookingsApi.markNoShow(bookingId);
+      toast.success('Đã đánh dấu khách không đến');
+      fetchBookings();
+      setSelectedBooking(null);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể cập nhật trạng thái');
+>>>>>>> Stashed changes
     }
   };
 
@@ -216,6 +292,90 @@ const AdminBookingsPage = () => {
                     </button>
                   )}
                 </div>
+<<<<<<< Updated upstream
+=======
+
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <FiCalendar className="text-petshop-green" />
+                    {formatDate(booking.bookingDate)}
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-600">
+                    <FiClock className="text-petshop-yellow" />
+                    {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <div>
+                    <span className="font-bold text-petshop-orange">{formatPrice(booking.price)}</span>
+                    <p className={`text-xs mt-1 ${booking.paymentStatus === 'PAID' ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => setSelectedBooking(booking)}
+                      className="p-2 text-gray-500 hover:text-blue-500 hover:bg-blue-50 rounded-lg"
+                      title="Xem chi tiết"
+                    >
+                      <FiEye />
+                    </button>
+                    {booking.status === 'PENDING' && (
+                      <>
+                        <button
+                          onClick={() => handleConfirm(booking.id)}
+                          className="p-2 text-gray-500 hover:text-green-500 hover:bg-green-50 rounded-lg"
+                          title="Xác nhận"
+                        >
+                          <FiCheck />
+                        </button>
+                        <button
+                          onClick={() => setShowCancelModal(booking.id)}
+                          className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                          title="Hủy"
+                        >
+                          <FiX />
+                        </button>
+                      </>
+                    )}
+                    {booking.status === 'CONFIRMED' && (
+                      <>
+                        <button
+                          onClick={() => handleStart(booking.id)}
+                          className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-sm"
+                          title="Bắt đầu dịch vụ"
+                        >
+                          <FiPlay className="inline mr-1" /> Bắt đầu
+                        </button>
+                        <button
+                          onClick={() => handleMarkNoShow(booking.id)}
+                          className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs"
+                          title="Khách không đến"
+                        >
+                          No show
+                        </button>
+                      </>
+                    )}
+                    {booking.status === 'IN_PROGRESS' && (
+                      <button
+                        onClick={() => handleComplete(booking.id)}
+                        className="px-3 py-1 bg-green-100 text-green-600 rounded-lg text-sm"
+                      >
+                        <FiCheck className="inline mr-1" /> Hoàn thành
+                      </button>
+                    )}
+                    {booking.status === 'COMPLETED' && booking.paymentStatus !== 'PAID' && (
+                      <button
+                        onClick={() => handlePayBooking(booking)}
+                        className="px-3 py-1 bg-petshop-orange/10 text-petshop-orange rounded-lg text-sm"
+                      >
+                        Thanh toán
+                      </button>
+                    )}
+                  </div>
+                </div>
+>>>>>>> Stashed changes
               </div>
             </div>
           </motion.div>

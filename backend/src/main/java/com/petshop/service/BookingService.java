@@ -1,7 +1,9 @@
 package com.petshop.service;
 
 import com.petshop.dto.request.BookingRequest;
+import com.petshop.dto.response.BookingCompletionPreviewDTO;
 import com.petshop.dto.response.BookingDTO;
+import com.petshop.dto.response.BookingPromotionProgressDTO;
 import com.petshop.entity.Booking;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,9 +23,13 @@ public interface BookingService {
     // Lấy thông tin booking
     BookingDTO getBookingById(Long id);
     BookingDTO getBookingByCode(String bookingCode);
+    BookingCompletionPreviewDTO previewPaymentPrice(Long bookingId);
     
     // Danh sách booking của user
     Page<BookingDTO> getMyBookings(Pageable pageable);
+
+    // Tiến trình khuyến mãi "Đặt lịch chăm sóc 3 tặng 1"
+    BookingPromotionProgressDTO getPromotionProgress(Long petId, Long serviceId);
     
     // Hủy booking (user)
     BookingDTO cancelBooking(Long id, String reason);
@@ -40,6 +46,7 @@ public interface BookingService {
     BookingDTO confirmBooking(Long id);
     BookingDTO startBooking(Long id);
     BookingDTO completeBooking(Long id, String staffNote);
+    BookingDTO payBooking(Long id);
     BookingDTO adminCancelBooking(Long id, String reason);
     BookingDTO markNoShow(Long id);
     

@@ -35,6 +35,7 @@ const BookingPage = () => {
   });
 
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [promotionPreview, setPromotionPreview] = useState(null);
 
   useEffect(() => {
     fetchServices();
@@ -69,8 +70,39 @@ const BookingPage = () => {
     }
   }, [formData.date, formData.serviceId]);
 
+<<<<<<< Updated upstream
   const generateTimeSlots = () => {
     // Generate time slots from 8:00 to 18:00
+=======
+  useEffect(() => {
+    const fetchPromotionPreview = async () => {
+      if (!isAuthenticated) {
+        setPromotionPreview(null);
+        return;
+      }
+
+      const selectedServiceId = parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id;
+      const selectedPetId = formData.petId && formData.petId !== 'new' ? parseInt(formData.petId) : null;
+
+      if (!selectedServiceId || !selectedPetId) {
+        setPromotionPreview(null);
+        return;
+      }
+
+      try {
+        const res = await bookingsApi.getPromotionProgress(selectedPetId, selectedServiceId);
+        setPromotionPreview(res.data);
+      } catch (err) {
+        setPromotionPreview(null);
+      }
+    };
+
+    fetchPromotionPreview();
+  }, [isAuthenticated, formData.serviceId, formData.petId, services]);
+
+  const generateTimeSlots = async () => {
+    // Tạo các khung giờ từ 8:00 đến 18:00
+>>>>>>> Stashed changes
     const slots = [];
     const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
     const duration = selectedService?.duration || 60;
@@ -139,6 +171,9 @@ const BookingPage = () => {
   };
 
   const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
+  const baseEstimatedPrice = selectedService?.pricingList?.[0]?.price || 0;
+  const canApplyFreeAtPayment = Boolean(promotionPreview?.canApplyFreeBooking);
+  const estimatedPayablePrice = canApplyFreeAtPayment ? 0 : baseEstimatedPrice;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -515,6 +550,12 @@ const BookingPage = () => {
               {step === 4 && (
                 <div>
                   <h2 className="text-xl font-bold text-gray-800 mb-6">Xác nhận đặt lịch</h2>
+
+                  {canApplyFreeAtPayment && (
+                    <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+                      Đủ điều kiện miễn phí: Bạn đã tích đủ chương trình "Đặt lịch chăm sóc 3 tặng 1" cho dịch vụ này. Lần này dự kiến miễn phí khi thanh toán.
+                    </div>
+                  )}
                   
                   <div className="bg-petshop-cream rounded-2xl p-6 mb-6">
                     <div className="grid gap-4">
@@ -562,15 +603,27 @@ const BookingPage = () => {
                       <div className="flex justify-between text-lg">
                         <span className="font-semibold">Tạm tính</span>
                         <span className="font-bold text-petshop-green">
-                          {formatPrice(selectedService?.pricingList?.[0]?.price || 0)}
+                          {formatPrice(baseEstimatedPrice)}
                         </span>
                       </div>
+                      {canApplyFreeAtPayment && (
+                        <>
+                          <div className="flex justify-between text-lg text-emerald-700">
+                            <span className="font-semibold">Ưu đãi 3 tặng 1</span>
+                            <span className="font-bold">-{formatPrice(baseEstimatedPrice)}</span>
+                          </div>
+                          <div className="flex justify-between text-lg">
+                            <span className="font-semibold">Thanh toán dự kiến</span>
+                            <span className="font-bold text-emerald-700">{formatPrice(estimatedPayablePrice)}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   <p className="text-sm text-gray-500 mb-6">
                     * Giá có thể thay đổi tùy theo cân nặng và tình trạng thú cưng. 
-                    Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút.
+                    Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút. Khuyến mãi miễn phí được áp dụng tại bước thanh toán.
                   </p>
                 </div>
               )}
