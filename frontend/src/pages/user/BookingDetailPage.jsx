@@ -10,6 +10,7 @@ const BookingDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
+  const [promotionProgress, setPromotionProgress] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +20,19 @@ const BookingDetailPage = () => {
   const fetchBooking = async () => {
     try {
       const response = await bookingsApi.getById(id);
-      setBooking(response.data);
+      const bookingData = response.data;
+      setBooking(bookingData);
+
+      if (bookingData?.petId && bookingData?.serviceId) {
+        try {
+          const progressRes = await bookingsApi.getPromotionProgress(bookingData.petId, bookingData.serviceId);
+          setPromotionProgress(progressRes.data);
+        } catch (progressError) {
+          setPromotionProgress(null);
+        }
+      } else {
+        setPromotionProgress(null);
+      }
     } catch (error) {
       console.error('Error fetching booking:', error);
       toast.error('Không thể tải thông tin lịch hẹn');
@@ -42,6 +55,27 @@ const BookingDetailPage = () => {
 
   const handleRebook = () => {
     navigate(`/booking?service=${booking.serviceId}`);
+  };
+
+  const handlePayBooking = async () => {
+    try {
+      const previewRes = await bookingsApi.previewPayment(booking.id);
+      const preview = previewRes.data;
+
+      const confirmMessage = preview.willBeFree
+        ? `Bạn đủ điều kiện Khuyến mãi 3 tặng 1 (cùng dịch vụ). Số tiền thanh toán: ${formatPrice(preview.finalPrice)}. Xác nhận thanh toán?`
+        : `Số tiền cần thanh toán: ${formatPrice(preview.finalPrice)}. Xác nhận thanh toán?`;
+
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+
+      await bookingsApi.pay(booking.id);
+      toast.success(preview.willBeFree ? 'Thanh toán thành công - Booking này được miễn phí 100%' : 'Thanh toán thành công');
+      fetchBooking();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Không thể thanh toán booking');
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -310,12 +344,29 @@ const BookingDetailPage = () => {
             </button>
           )}
           {booking.status === 'COMPLETED' && (
-            <button
-              onClick={handleRebook}
-              className="btn-primary flex items-center gap-2"
-            >
-              <FiRefreshCw /> Đặt lại
-            </button>
+            <>
+              {booking.paymentStatus !== 'PAID' && (
+                <div className="flex items-center gap-2">
+                  {promotionProgress?.canApplyFreeBooking && (
+                    <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700">
+                      Đủ điều kiện miễn phí
+                    </span>
+                  )}
+                  <button
+                    onClick={handlePayBooking}
+                    className="px-6 py-2.5 bg-petshop-orange/10 text-petshop-orange rounded-xl hover:bg-petshop-orange/20 transition-colors font-medium"
+                  >
+                    Thanh toán
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleRebook}
+                className="btn-primary flex items-center gap-2"
+              >
+                <FiRefreshCw /> Đặt lại
+              </button>
+            </>
           )}
         </div>
       </motion.div>

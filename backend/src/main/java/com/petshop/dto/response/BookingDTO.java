@@ -46,6 +46,12 @@ public class BookingDTO {
     
     // Giá
     private BigDecimal price;
+
+    // Khuyến mãi đặt lịch 3 tặng 1
+    private Boolean promotionConsumed;
+    private Boolean promotionReward;
+    private BigDecimal promotionDiscountPercent;
+    private String promotionReference;
     
     // Ghi chú
     private String customerNote;
@@ -57,6 +63,7 @@ public class BookingDTO {
     
     // Trạng thái
     private Booking.BookingStatus status;
+    private Booking.PaymentStatus paymentStatus;
     private String cancelReason;
     
     // Review
@@ -65,5 +72,6 @@ public class BookingDTO {
     // Thời gian
     private LocalDateTime confirmedAt;
     private LocalDateTime completedAt;
+    private LocalDateTime paidAt;
     private LocalDateTime createdAt;
 }

@@ -16,6 +16,7 @@ public class SchemaMigrationRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         ensurePetImageColumnType();
+        backfillBookingPaymentStatus();
     }
 
     private void ensurePetImageColumnType() {
@@ -25,6 +26,21 @@ public class SchemaMigrationRunner implements CommandLineRunner {
         } catch (Exception ex) {
             // Keep app startup resilient if schema is already compatible or table does not exist yet.
             log.debug("Schema migration skipped for pets.image: {}", ex.getMessage());
+        }
+    }
+
+    private void backfillBookingPaymentStatus() {
+        try {
+            int completedUpdated = jdbcTemplate.update(
+                "UPDATE bookings SET payment_status = 'PAID' WHERE status = 'COMPLETED' AND payment_status IS NULL"
+            );
+            int pendingUpdated = jdbcTemplate.update(
+                "UPDATE bookings SET payment_status = 'PENDING' WHERE payment_status IS NULL"
+            );
+            log.info("Schema migration: backfilled bookings.payment_status (completed->PAID: {}, others->PENDING: {})",
+                completedUpdated, pendingUpdated);
+        } catch (Exception ex) {
+            log.debug("Schema migration skipped for bookings.payment_status: {}", ex.getMessage());
         }
     }
 }

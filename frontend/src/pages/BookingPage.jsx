@@ -15,7 +15,7 @@ const BookingPage = () => {
   const [step, setStep] = useState(1);
   const [services, setServices] = useState([]);
   const [pets, setPets] = useState([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -35,6 +35,7 @@ const BookingPage = () => {
   });
 
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [promotionPreview, setPromotionPreview] = useState(null);
 
   useEffect(() => {
     fetchServices();
@@ -67,55 +68,59 @@ const BookingPage = () => {
     if (formData.date) {
       generateTimeSlots();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.date, formData.serviceId]);
+
+<<<<<<< Updated upstream
+  const generateTimeSlots = () => {
+    // Generate time slots from 8:00 to 18:00
+=======
+  useEffect(() => {
+    const fetchPromotionPreview = async () => {
+      if (!isAuthenticated) {
+        setPromotionPreview(null);
+        return;
+      }
+
+      const selectedServiceId = parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id;
+      const selectedPetId = formData.petId && formData.petId !== 'new' ? parseInt(formData.petId) : null;
+
+      if (!selectedServiceId || !selectedPetId) {
+        setPromotionPreview(null);
+        return;
+      }
+
+      try {
+        const res = await bookingsApi.getPromotionProgress(selectedPetId, selectedServiceId);
+        setPromotionPreview(res.data);
+      } catch (err) {
+        setPromotionPreview(null);
+      }
+    };
+
+    fetchPromotionPreview();
+  }, [isAuthenticated, formData.serviceId, formData.petId, services]);
 
   const generateTimeSlots = async () => {
     // Tạo các khung giờ từ 8:00 đến 18:00
+>>>>>>> Stashed changes
     const slots = [];
     const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
     const duration = selectedService?.duration || 60;
 
-    const now = new Date();
-    const isToday = formData.date === now.toISOString().split('T')[0];
-
     for (let hour = 8; hour <= 18; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
-        // Nếu là ngày hôm nay, bỏ qua các khung giờ đã qua (cần ít nhất 30 phút)
-        if (isToday) {
-          const slotMinutes = hour * 60 + minute;
-          const currentMinutes = now.getHours() * 60 + now.getMinutes() + 30;
-          if (slotMinutes < currentMinutes) continue;
-        }
-
         const endHour = hour + Math.floor((minute + duration) / 60);
         const endMinute = (minute + duration) % 60;
         
         if (endHour < 19 || (endHour === 19 && endMinute === 0)) {
           const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          slots.push({ time, available: true }); // Mặc định là trống
+          // Randomly mark some as unavailable for demo
+          const available = Math.random() > 0.3;
+          slots.push({ time, available });
         }
       }
     }
-
-    // Kiểm tra từng khung giờ với API
-    const checkedSlots = await Promise.all(
-      slots.map(async (slot) => {
-        try {
-          const [h, m] = slot.time.split(':').map(Number);
-          const endMinTotal = h * 60 + m + duration;
-          const endH = Math.floor(endMinTotal / 60);
-          const endM = endMinTotal % 60;
-          const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
-          
-          const response = await bookingsApi.checkAvailability(formData.date, slot.time, endTime);
-          return { ...slot, available: response.data.available, remainingSlots: response.data.remainingSlots };
-        } catch {
-          return { ...slot, available: true, remainingSlots: 3 }; // Nếu lỗi thì coi như trống
-        }
-      })
-    );
-    setAvailableSlots(checkedSlots);
+    setAvailableSlots(slots);
   };
 
   const handleChange = (e) => {
@@ -135,14 +140,14 @@ const BookingPage = () => {
     try {
       await bookingsApi.create({
         serviceId: parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id,
-        petId: (formData.petId && formData.petId !== 'new') ? parseInt(formData.petId) : null,
+        petId: formData.petId || null,
         bookingDate: formData.date,
         startTime: formData.time,
-        customerNote: formData.notes,
+        customerNote: formData.notes,  // BE expects 'customerNote' not 'notes'
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail,
-        petInfo: (!formData.petId || formData.petId === 'new') ? {
+        petInfo: !formData.petId ? {
           name: formData.petName,
           type: formData.petType,
           breed: formData.petBreed,
@@ -160,11 +165,15 @@ const BookingPage = () => {
   };
 
   const getMinDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
   };
 
   const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
+  const baseEstimatedPrice = selectedService?.pricingList?.[0]?.price || 0;
+  const canApplyFreeAtPayment = Boolean(promotionPreview?.canApplyFreeBooking);
+  const estimatedPayablePrice = canApplyFreeAtPayment ? 0 : baseEstimatedPrice;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -324,12 +333,7 @@ const BookingPage = () => {
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             }`}
                           >
-                            <div>{slot.time}</div>
-                            <div className={`text-xs mt-1 ${
-                              !slot.available ? 'text-red-400' : slot.remainingSlots <= 1 ? 'text-orange-500' : 'text-green-500'
-                            }`}>
-                              {!slot.available ? 'Hết chỗ' : `Còn ${slot.remainingSlots}/3`}
-                            </div>
+                            {slot.time}
                           </button>
                         ))}
                       </div>
@@ -546,6 +550,12 @@ const BookingPage = () => {
               {step === 4 && (
                 <div>
                   <h2 className="text-xl font-bold text-gray-800 mb-6">Xác nhận đặt lịch</h2>
+
+                  {canApplyFreeAtPayment && (
+                    <div className="mb-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
+                      Đủ điều kiện miễn phí: Bạn đã tích đủ chương trình "Đặt lịch chăm sóc 3 tặng 1" cho dịch vụ này. Lần này dự kiến miễn phí khi thanh toán.
+                    </div>
+                  )}
                   
                   <div className="bg-petshop-cream rounded-2xl p-6 mb-6">
                     <div className="grid gap-4">
@@ -593,15 +603,27 @@ const BookingPage = () => {
                       <div className="flex justify-between text-lg">
                         <span className="font-semibold">Tạm tính</span>
                         <span className="font-bold text-petshop-green">
-                          {formatPrice(selectedService?.pricingList?.[0]?.price || 0)}
+                          {formatPrice(baseEstimatedPrice)}
                         </span>
                       </div>
+                      {canApplyFreeAtPayment && (
+                        <>
+                          <div className="flex justify-between text-lg text-emerald-700">
+                            <span className="font-semibold">Ưu đãi 3 tặng 1</span>
+                            <span className="font-bold">-{formatPrice(baseEstimatedPrice)}</span>
+                          </div>
+                          <div className="flex justify-between text-lg">
+                            <span className="font-semibold">Thanh toán dự kiến</span>
+                            <span className="font-bold text-emerald-700">{formatPrice(estimatedPayablePrice)}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   <p className="text-sm text-gray-500 mb-6">
                     * Giá có thể thay đổi tùy theo cân nặng và tình trạng thú cưng. 
-                    Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút.
+                    Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút. Khuyến mãi miễn phí được áp dụng tại bước thanh toán.
                   </p>
                 </div>
               )}

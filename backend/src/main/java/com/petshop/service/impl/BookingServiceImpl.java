@@ -1,7 +1,9 @@
 package com.petshop.service.impl;
 
 import com.petshop.dto.request.BookingRequest;
+import com.petshop.dto.response.BookingCompletionPreviewDTO;
 import com.petshop.dto.response.BookingDTO;
+import com.petshop.dto.response.BookingPromotionProgressDTO;
 import com.petshop.entity.*;
 import com.petshop.exception.BadRequestException;
 import com.petshop.exception.ResourceNotFoundException;
@@ -10,6 +12,7 @@ import com.petshop.security.UserPrincipal;
 import com.petshop.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +30,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
+
+    private static final int PROMOTION_REQUIRED_COMPLETED_BOOKINGS = 3;
     
     private final BookingRepository bookingRepository;
     private final SpaServiceRepository spaServiceRepository;
@@ -74,7 +80,7 @@ public class BookingServiceImpl implements BookingService {
         // Check time slot availability
         LocalTime endTime = request.getStartTime().plusMinutes(service.getDuration());
         if (!isTimeSlotAvailable(request.getBookingDate(), request.getStartTime(), endTime)) {
-            throw new BadRequestException("Khung giờ đã đầy (tối đa 3 thú cưng/khung giờ)");
+            throw new BadRequestException("Khung giờ đã được đặt");
         }
         
         // Get price based on pet weight
@@ -97,37 +103,22 @@ public class BookingServiceImpl implements BookingService {
         return mapToDTO(booking);
     }
     
-    private static final int MAX_SLOTS_PER_TIME = 3;
-    
     @Override
     public boolean isTimeSlotAvailable(LocalDate date, LocalTime startTime, LocalTime endTime) {
-        int count = countBookingsInSlot(date, startTime, endTime);
-        return count < MAX_SLOTS_PER_TIME;
-    }
-    
-    @Override
-    public int getAvailableSlotCount(LocalDate date, LocalTime startTime, LocalTime endTime) {
-        int count = countBookingsInSlot(date, startTime, endTime);
-        return Math.max(0, MAX_SLOTS_PER_TIME - count);
-    }
-    
-    private int countBookingsInSlot(LocalDate date, LocalTime startTime, LocalTime endTime) {
         List<Booking> existingBookings = bookingRepository.findByDate(date);
-        int count = 0;
         
         for (Booking booking : existingBookings) {
-            if (booking.getStatus() == Booking.BookingStatus.CANCELLED ||
-                booking.getStatus() == Booking.BookingStatus.NO_SHOW) {
+            if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
                 continue;
             }
             
             // Check overlap
             if (startTime.isBefore(booking.getEndTime()) && endTime.isAfter(booking.getStartTime())) {
-                count++;
+                return false;
             }
         }
         
-        return count;
+        return true;
     }
     
     @Override
@@ -143,12 +134,75 @@ public class BookingServiceImpl implements BookingService {
             .orElseThrow(() -> new ResourceNotFoundException("Lịch hẹn không tồn tại"));
         return mapToDTO(booking);
     }
+
+    @Override
+    public BookingCompletionPreviewDTO previewPaymentPrice(Long bookingId) {
+        Booking booking = getBookingEntity(bookingId);
+        validatePaymentPermission(booking);
+        if (booking.getStatus() != Booking.BookingStatus.COMPLETED) {
+            throw new BadRequestException("Chỉ preview thanh toán cho lịch hẹn đã hoàn thành");
+        }
+        if (booking.getPaymentStatus() == Booking.PaymentStatus.PAID) {
+            return BookingCompletionPreviewDTO.builder()
+                .bookingId(booking.getId())
+                .petId(booking.getPet().getId())
+                .serviceId(booking.getService().getId())
+                .originalPrice(booking.getPrice())
+                .finalPrice(booking.getPrice())
+                .discountPercent(BigDecimal.ZERO)
+                .eligibleCompletedCount(0)
+                .requiredCount(PROMOTION_REQUIRED_COMPLETED_BOOKINGS)
+                .willBeFree(false)
+                .build();
+        }
+
+        long eligibleCount = bookingRepository.countEligibleCompletedForPromotion(
+            booking.getPet().getId(),
+            booking.getService().getId()
+        );
+        boolean willBeFree = eligibleCount >= PROMOTION_REQUIRED_COMPLETED_BOOKINGS;
+        BigDecimal originalPrice = booking.getPrice() == null ? BigDecimal.ZERO : booking.getPrice();
+
+        return BookingCompletionPreviewDTO.builder()
+            .bookingId(booking.getId())
+            .petId(booking.getPet().getId())
+            .serviceId(booking.getService().getId())
+            .originalPrice(originalPrice)
+            .finalPrice(willBeFree ? BigDecimal.ZERO : originalPrice)
+            .discountPercent(willBeFree ? BigDecimal.valueOf(100) : BigDecimal.ZERO)
+            .eligibleCompletedCount(eligibleCount)
+            .requiredCount(PROMOTION_REQUIRED_COMPLETED_BOOKINGS)
+            .willBeFree(willBeFree)
+            .build();
+    }
     
     @Override
     public Page<BookingDTO> getMyBookings(Pageable pageable) {
         User user = getCurrentUser();
         return bookingRepository.findByUserIdOrderByBookingDateDescStartTimeDesc(user.getId(), pageable)
             .map(this::mapToDTO);
+    }
+
+    @Override
+    public BookingPromotionProgressDTO getPromotionProgress(Long petId, Long serviceId) {
+        User user = getCurrentUser();
+        petRepository.findByIdAndOwnerId(petId, user.getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Thú cưng không tồn tại"));
+
+        spaServiceRepository.findById(serviceId)
+            .orElseThrow(() -> new ResourceNotFoundException("Dịch vụ không tồn tại"));
+
+        long eligibleCount = bookingRepository.countEligibleCompletedForPromotion(petId, serviceId);
+        int remaining = (int) Math.max(0, PROMOTION_REQUIRED_COMPLETED_BOOKINGS - eligibleCount);
+
+        return BookingPromotionProgressDTO.builder()
+            .petId(petId)
+            .serviceId(serviceId)
+            .eligibleCompletedCount(eligibleCount)
+            .requiredCount(PROMOTION_REQUIRED_COMPLETED_BOOKINGS)
+            .remainingToReward(remaining)
+            .canApplyFreeBooking(eligibleCount >= PROMOTION_REQUIRED_COMPLETED_BOOKINGS)
+            .build();
     }
     
     @Override
@@ -217,11 +271,81 @@ public class BookingServiceImpl implements BookingService {
     public BookingDTO completeBooking(Long id, String staffNote) {
         Booking booking = getBookingEntity(id);
         validateStatusTransition(booking.getStatus(), Booking.BookingStatus.COMPLETED);
+
         booking.setStatus(Booking.BookingStatus.COMPLETED);
         booking.setStaffNote(staffNote);
-        booking.setCompletedAt(java.time.LocalDateTime.now());
+        booking.setCompletedAt(LocalDateTime.now());
+
+        if (booking.getPaymentStatus() == null) {
+            booking.setPaymentStatus(Booking.PaymentStatus.PENDING);
+        }
+
         booking = bookingRepository.save(booking);
         return mapToDTO(booking);
+    }
+
+    @Override
+    @Transactional
+    public BookingDTO payBooking(Long id) {
+        Booking booking = getBookingEntity(id);
+        validatePaymentPermission(booking);
+        if (booking.getStatus() != Booking.BookingStatus.COMPLETED) {
+            throw new BadRequestException("Chỉ thanh toán cho lịch hẹn đã hoàn thành");
+        }
+        if (booking.getPaymentStatus() == Booking.PaymentStatus.PAID) {
+            throw new BadRequestException("Lịch hẹn này đã được thanh toán");
+        }
+
+        // Lock theo pet để tránh 2 giao dịch thanh toán cùng consume một nhóm booking nguồn.
+        petRepository.findByIdForUpdate(booking.getPet().getId())
+            .orElseThrow(() -> new ResourceNotFoundException("Thú cưng không tồn tại"));
+
+        if (!Boolean.TRUE.equals(booking.getPromotionReward())) {
+            List<Booking> sourceBookings = bookingRepository.findEligibleCompletedForPromotionWithLock(
+                booking.getPet().getId(),
+                booking.getService().getId(),
+                booking.getId(),
+                PageRequest.of(0, PROMOTION_REQUIRED_COMPLETED_BOOKINGS)
+            );
+
+            if (sourceBookings.size() >= PROMOTION_REQUIRED_COMPLETED_BOOKINGS) {
+                LocalDateTime now = LocalDateTime.now();
+                String promotionRef = "PROMO3X1-" + booking.getPet().getId() + "-" + booking.getService().getId() + "-" + System.currentTimeMillis();
+
+                for (Booking source : sourceBookings) {
+                    source.setPromotionConsumed(true);
+                    source.setPromotionConsumedAt(now);
+                    source.setPromotionReference(promotionRef);
+                }
+
+                booking.setPromotionReward(true);
+                booking.setPromotionDiscountPercent(BigDecimal.valueOf(100));
+                booking.setPromotionAppliedAt(now);
+                booking.setPromotionReference(promotionRef);
+                booking.setPrice(BigDecimal.ZERO);
+                bookingRepository.saveAll(sourceBookings);
+            } else {
+                booking.setPromotionReward(false);
+                booking.setPromotionDiscountPercent(BigDecimal.ZERO);
+            }
+        }
+
+        booking.setPaymentStatus(Booking.PaymentStatus.PAID);
+        booking.setPaidAt(LocalDateTime.now());
+        booking = bookingRepository.save(booking);
+        return mapToDTO(booking);
+    }
+
+    private void validatePaymentPermission(Booking booking) {
+        User currentUser = getCurrentUserOptional();
+        if (currentUser == null) {
+            return;
+        }
+
+        if (currentUser.getRole() == User.Role.CUSTOMER &&
+            !booking.getUser().getId().equals(currentUser.getId())) {
+            throw new BadRequestException("Không có quyền thanh toán lịch hẹn này");
+        }
     }
     
     @Override
@@ -319,6 +443,18 @@ public class BookingServiceImpl implements BookingService {
         return userRepository.findById(userPrincipal.getId())
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
+
+    private User getCurrentUserOptional() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        if (!(authentication.getPrincipal() instanceof UserPrincipal userPrincipal)) {
+            return null;
+        }
+
+        return userRepository.findById(userPrincipal.getId()).orElse(null);
+    }
     
     private BookingDTO mapToDTO(Booking booking) {
         return BookingDTO.builder()
@@ -339,7 +475,12 @@ public class BookingServiceImpl implements BookingService {
             .startTime(booking.getStartTime())
             .endTime(booking.getEndTime())
             .status(booking.getStatus())
+            .paymentStatus(booking.getPaymentStatus())
             .price(booking.getPrice())
+            .promotionConsumed(booking.getPromotionConsumed())
+            .promotionReward(booking.getPromotionReward())
+            .promotionDiscountPercent(booking.getPromotionDiscountPercent())
+            .promotionReference(booking.getPromotionReference())
             .customerNote(booking.getCustomerNote())
             .staffNote(booking.getStaffNote())
             .cancelReason(booking.getCancelReason())
@@ -347,6 +488,7 @@ public class BookingServiceImpl implements BookingService {
             .staffName(booking.getStaff() != null ? booking.getStaff().getFullName() : null)
             .confirmedAt(booking.getConfirmedAt())
             .completedAt(booking.getCompletedAt())
+            .paidAt(booking.getPaidAt())
             .createdAt(booking.getCreatedAt())
             .build();
     }

@@ -4,9 +4,12 @@ import com.petshop.entity.Booking;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.LockModeType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -67,6 +70,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     
     // Recent bookings for dashboard
     List<Booking> findTop5ByOrderByCreatedAtDesc();
+<<<<<<< Updated upstream
+=======
     
     // ==================== ANALYTICS QUERIES ====================
     
@@ -110,6 +115,31 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // Đếm booking hoàn thành
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.status = 'COMPLETED'")
     Long countCompleted();
+
+    @Query("SELECT COUNT(b) FROM Booking b " +
+           "WHERE b.pet.id = :petId " +
+           "AND b.service.id = :serviceId " +
+           "AND b.status = 'COMPLETED' " +
+           "AND b.paymentStatus = 'PAID' " +
+           "AND b.promotionConsumed = false " +
+           "AND b.promotionReward = false")
+    long countEligibleCompletedForPromotion(@Param("petId") Long petId,
+                                            @Param("serviceId") Long serviceId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT b FROM Booking b " +
+           "WHERE b.pet.id = :petId " +
+           "AND b.service.id = :serviceId " +
+           "AND b.status = 'COMPLETED' " +
+           "AND b.paymentStatus = 'PAID' " +
+           "AND b.promotionConsumed = false " +
+           "AND b.promotionReward = false " +
+           "AND b.id <> :excludeBookingId " +
+           "ORDER BY b.completedAt ASC, b.id ASC")
+    List<Booking> findEligibleCompletedForPromotionWithLock(@Param("petId") Long petId,
+                                                            @Param("serviceId") Long serviceId,
+                                                            @Param("excludeBookingId") Long excludeBookingId,
+                                                            Pageable pageable);
     
     // Đếm booking bị hủy
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.status IN ('CANCELLED', 'NO_SHOW')")
@@ -145,32 +175,5 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    "GROUP BY p.id, p.name, p.type, p.breed, u.full_name " +
                    "ORDER BY service_spending DESC LIMIT 10", nativeQuery = true)
     List<Object[]> getVipPetServiceSpending();
-    
-    // Tìm bookings COMPLETED để gửi nhắc nhở spa
-    // Hỗ trợ cả booking có completedAt và không có (fallback sang bookingDate)
-    @Query("SELECT b FROM Booking b " +
-           "JOIN FETCH b.user u " +
-           "JOIN FETCH b.pet p " +
-           "JOIN FETCH b.service s " +
-           "WHERE b.status = 'COMPLETED' " +
-           "AND ((b.completedAt IS NOT NULL AND b.completedAt BETWEEN :startDate AND :endDate) " +
-           "  OR (b.completedAt IS NULL AND b.bookingDate BETWEEN :startLocalDate AND :endLocalDate)) " +
-           "AND u.active = true " +
-           "AND NOT EXISTS (SELECT r FROM SpaReminderLog r WHERE r.booking.id = b.id) " +
-           "AND NOT EXISTS (SELECT b2 FROM Booking b2 WHERE b2.user.id = b.user.id " +
-           "    AND b2.pet.id = b.pet.id AND b2.status NOT IN ('CANCELLED', 'NO_SHOW') " +
-           "    AND b2.bookingDate > b.bookingDate)")
-    List<Booking> findCompletedBookingsForReminder(@Param("startDate") LocalDateTime startDate,
-                                                    @Param("endDate") LocalDateTime endDate,
-                                                    @Param("startLocalDate") LocalDate startLocalDate,
-                                                    @Param("endLocalDate") LocalDate endLocalDate);
-    // Tìm TẤT CẢ bookings COMPLETED chưa gửi nhắc nhở (dùng cho admin xem danh sách eligible)
-    @Query("SELECT b FROM Booking b " +
-           "JOIN FETCH b.user u " +
-           "JOIN FETCH b.pet p " +
-           "JOIN FETCH b.service s " +
-           "WHERE b.status = 'COMPLETED' " +
-           "AND u.active = true " +
-           "AND NOT EXISTS (SELECT r FROM SpaReminderLog r WHERE r.booking.id = b.id) " +
-           "ORDER BY COALESCE(b.completedAt, CAST(b.bookingDate AS timestamp)) DESC")
-    List<Booking> findAllCompletedNotReminded();}
+>>>>>>> Stashed changes
+}

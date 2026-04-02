@@ -11,7 +11,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "bookings")
+@Table(name = "bookings", indexes = {
+    @Index(name = "idx_booking_pet_service_promo_eligible", columnList = "pet_id,service_id,status,payment_status,promotion_consumed,is_promotion_reward,completed_at"),
+    @Index(name = "idx_booking_pet_completed_at", columnList = "pet_id,completed_at")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -58,6 +61,37 @@ public class Booking {
     // Giá dịch vụ
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
+    @Builder.Default
+    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    // Đã dùng làm 1 trong 3 lịch nguồn cho khuyến mãi chưa
+    @Column(name = "promotion_consumed", nullable = false)
+    @Builder.Default
+    private Boolean promotionConsumed = false;
+
+    // Lịch hiện tại có phải lịch được tặng miễn phí không
+    @Column(name = "is_promotion_reward", nullable = false)
+    @Builder.Default
+    private Boolean promotionReward = false;
+
+    @Column(name = "promotion_discount_percent", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal promotionDiscountPercent = BigDecimal.ZERO;
+
+    @Column(name = "promotion_reference", length = 80)
+    private String promotionReference;
+
+    @Column(name = "promotion_consumed_at")
+    private LocalDateTime promotionConsumedAt;
+
+    @Column(name = "promotion_applied_at")
+    private LocalDateTime promotionAppliedAt;
 
     // Ghi chú của khách hàng
     @Column(name = "customer_note", columnDefinition = "TEXT")
@@ -109,5 +143,11 @@ public class Booking {
         COMPLETED,      // Hoàn thành
         CANCELLED,      // Đã hủy
         NO_SHOW         // Khách không đến
+    }
+
+    public enum PaymentStatus {
+        PENDING,
+        PAID,
+        FAILED
     }
 }
