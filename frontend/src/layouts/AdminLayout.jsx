@@ -36,6 +36,7 @@ const AdminLayout = () => {
     { path: '/admin/users', icon: FiUsers, label: 'Người dùng' },
     { path: '/admin/vouchers', icon: FiTag, label: 'Voucher' },
     { path: '/admin/reviews', icon: FiStar, label: 'Đánh giá' },
+    { path: '/admin/reminders', icon: FiBell, label: 'Nhắc nhở Spa' },
   ];
 
   const isActive = (path, exact = false) => {

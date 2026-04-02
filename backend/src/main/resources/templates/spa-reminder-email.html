@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Nhắc nhở Spa - PetShop</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #FFF8F0;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #FFF8F0;">
+    <tr>
+        <td align="center" style="padding: 20px 10px;">
+            <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0"
+                   style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+
+                <!-- Header -->
+                <tr>
+                    <td style="background: linear-gradient(135deg, #FF6B35, #FF8C5A); padding: 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🐾 PetShop Spa</h1>
+                        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;">Yêu thương thú cưng của bạn</p>
+                    </td>
+                </tr>
+
+                <!-- Body -->
+                <tr>
+                    <td style="padding: 32px 30px;">
+                        <!-- Greeting -->
+                        <p style="font-size: 18px; color: #333; margin: 0 0 8px;">
+                            Xin chào <strong th:text="${customerName}">Sen</strong> 👋
+                        </p>
+                        <p style="font-size: 15px; color: #666; line-height: 1.6; margin: 0 0 24px;">
+                            "Sen" ơi, đã <strong th:text="${daysSinceLastVisit}">14</strong> ngày kể từ lần cuối
+                            boss <strong style="color: #FF6B35;" th:text="${petName}">Milu</strong> được đi spa rồi đó! 🛁
+                        </p>
+
+                        <!-- Service Info Card -->
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                               style="background-color: #FFF5EC; border-radius: 12px; margin-bottom: 24px;">
+                            <tr>
+                                <td style="padding: 20px;">
+                                    <p style="font-size: 13px; color: #999; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 1px;">
+                                        Dịch vụ lần trước
+                                    </p>
+                                    <p style="font-size: 17px; color: #333; font-weight: 600; margin: 0;">
+                                        🧴 <span th:text="${lastServiceName}">Tắm gội tạo kiểu</span>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Benefits Section -->
+                        <p style="font-size: 15px; color: #333; font-weight: 600; margin: 0 0 12px;">
+                            Tại sao nên cho boss đi spa định kỳ? 🐶✨
+                        </p>
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 24px;">
+                            <tr>
+                                <td style="padding: 8px 0;">
+                                    <span style="display: inline-block; width: 24px;">✅</span>
+                                    <span style="font-size: 14px; color: #555;">Giữ bé <strong>sạch sẽ, thơm tho</strong> và luôn tự tin khi đi dạo</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;">
+                                    <span style="display: inline-block; width: 24px;">✅</span>
+                                    <span style="font-size: 14px; color: #555;">Phòng tránh <strong>bệnh về da, ve, bọ chét</strong> và rụng lông</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;">
+                                    <span style="display: inline-block; width: 24px;">✅</span>
+                                    <span style="font-size: 14px; color: #555;">Phát hiện sớm <strong>các vấn đề sức khỏe</strong> về da và lông</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;">
+                                    <span style="display: inline-block; width: 24px;">✅</span>
+                                    <span style="font-size: 14px; color: #555;">Boss <strong>vui vẻ, thoải mái</strong> hơn khi được chăm sóc đúng cách</span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Promotion Card (Optional) -->
+                        <div th:if="${hasPromotion}">
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                                   style="background: linear-gradient(135deg, #FF6B35, #FF8C5A); border-radius: 12px; margin-bottom: 24px;">
+                                <tr>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <p style="font-size: 13px; color: rgba(255,255,255,0.8); margin: 0 0 4px; text-transform: uppercase; letter-spacing: 1px;">
+                                            🎉 Ưu đãi đặc biệt
+                                        </p>
+                                        <p style="font-size: 22px; color: #ffffff; font-weight: 700; margin: 0 0 8px;"
+                                           th:text="${promotionText}">
+                                            Giảm 10% khi đặt lịch hôm nay!
+                                        </p>
+                                        <p style="font-size: 13px; color: rgba(255,255,255,0.8); margin: 0;">
+                                            + Tặng kèm cắt móng &amp; vắt tuyến hôi MIỄN PHÍ 🎁
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- CTA Button -->
+                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td align="center" style="padding: 8px 0 24px;">
+                                    <a th:href="${bookingUrl}"
+                                       style="display: inline-block; background: linear-gradient(135deg, #FF6B35, #FF8C5A); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 50px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);">
+                                        📅 Đặt lịch Spa ngay cho boss!
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="font-size: 14px; color: #888; text-align: center; margin: 0; line-height: 1.6;">
+                            Boss <strong th:text="${petName}">Milu</strong> xứng đáng được chăm sóc tốt nhất! 💖<br/>
+                            Đội ngũ PetShop luôn sẵn sàng phục vụ bé yêu của bạn.
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #F9F5F0; padding: 24px 30px; text-align: center; border-top: 1px solid #EEE;">
+                        <p style="font-size: 13px; color: #999; margin: 0 0 8px;">
+                            📞 Hotline: 1900 1234 &nbsp;|&nbsp; 📧 support@petshop.vn
+                        </p>
+                        <p style="font-size: 12px; color: #BBB; margin: 0;">
+                            © 2026 PetShop. Yêu thương thú cưng của bạn.<br/>
+                            Bạn nhận email này vì đã sử dụng dịch vụ Spa tại PetShop.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

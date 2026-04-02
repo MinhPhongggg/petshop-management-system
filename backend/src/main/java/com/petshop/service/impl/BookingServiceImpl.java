@@ -219,6 +219,7 @@ public class BookingServiceImpl implements BookingService {
         validateStatusTransition(booking.getStatus(), Booking.BookingStatus.COMPLETED);
         booking.setStatus(Booking.BookingStatus.COMPLETED);
         booking.setStaffNote(staffNote);
+        booking.setCompletedAt(java.time.LocalDateTime.now());
         booking = bookingRepository.save(booking);
         return mapToDTO(booking);
     }

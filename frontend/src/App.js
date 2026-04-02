@@ -50,6 +50,7 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage";
 import AdminServicesPage from "./pages/admin/AdminServicesPage";
 import AdminVouchersPage from "./pages/admin/AdminVouchersPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import AdminRemindersPage from "./pages/admin/AdminRemindersPage";
 
 // Components
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -152,6 +153,7 @@ function App() {
           <Route path="services" element={<AdminServicesPage />} />
           <Route path="vouchers" element={<AdminVouchersPage />} />
           <Route path="reviews" element={<AdminReviewsPage />} />
+          <Route path="reminders" element={<AdminRemindersPage />} />
         </Route>
       </Routes>
     </Router>

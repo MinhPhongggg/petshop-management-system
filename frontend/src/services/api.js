@@ -293,3 +293,12 @@ export const importApi = {
   downloadProductTemplate: () =>
     api.get("/import/products/template", { responseType: "blob" }),
 };
+
+// Spa Reminder API (Admin)
+export const spaReminderApi = {
+  triggerReminders: () => api.post("/spa-reminders/send"),
+  sendManualReminder: (bookingId) => api.post(`/spa-reminders/send/${bookingId}`),
+  getLogs: (params) => api.get("/spa-reminders/logs", { params }),
+  getStats: () => api.get("/spa-reminders/stats"),
+  getEligible: () => api.get("/spa-reminders/eligible"),
+};

@@ -76,8 +76,18 @@ const BookingPage = () => {
     const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
     const duration = selectedService?.duration || 60;
 
+    const now = new Date();
+    const isToday = formData.date === now.toISOString().split('T')[0];
+
     for (let hour = 8; hour <= 18; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
+        // Nếu là ngày hôm nay, bỏ qua các khung giờ đã qua (cần ít nhất 30 phút)
+        if (isToday) {
+          const slotMinutes = hour * 60 + minute;
+          const currentMinutes = now.getHours() * 60 + now.getMinutes() + 30;
+          if (slotMinutes < currentMinutes) continue;
+        }
+
         const endHour = hour + Math.floor((minute + duration) / 60);
         const endMinute = (minute + duration) % 60;
         
@@ -150,9 +160,8 @@ const BookingPage = () => {
   };
 
   const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   };
 
   const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
