@@ -187,17 +187,6 @@ export const rewardsApi = {
   getUserProgress: (userId) => api.get(`/rewards/user/${userId}`),
 };
 
-// ===== PAYMENTS API =====
-export const paymentsApi = {
-  mockMomo: (orderId) => api.post(`/payments/momo/${orderId}`),
-  createMomoOrder: (orderId) => api.post(`/payments/momo/order/${orderId}/create`),
-  // MoMo Booking Deposit
-  createBookingDeposit: (bookingId) => api.post(`/payments/momo/booking/${bookingId}/deposit`),
-  confirmMockDeposit: (bookingId) => api.post(`/payments/momo/booking/${bookingId}/confirm-mock`),
-  refundDeposit: (bookingId, reason) => api.post(`/payments/momo/booking/${bookingId}/refund`, null, { params: { reason } }),
-  getRedirectResult: (params) => api.get('/payments/momo/redirect', { params }),
-};
-
 // Pets API
 export const petsApi = {
   getMyPets: () => api.get('/pets'),

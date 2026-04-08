@@ -1,9 +1,17 @@
-import React from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { FiUser, FiPackage, FiCalendar, FiLogOut, FiGift, FiTag, FiStar } from 'react-icons/fi';
-import { MdPets } from 'react-icons/md';
-import { useAuthStore } from '../store/authStore';
+import React from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  FiUser,
+  FiPackage,
+  FiCalendar,
+  FiLogOut,
+  FiGift,
+  FiTag,
+  FiStar,
+} from "react-icons/fi";
+import { MdPets } from "react-icons/md";
+import { useAuthStore } from "../store/authStore";
 
 const UserLayout = () => {
   const location = useLocation();

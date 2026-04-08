@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -49,10 +48,6 @@ public class ProductRequest {
         private BigDecimal price;
         
         private int stock = 0;
-        
-        private int minStock = 10;
-        
-        private LocalDate expiryDate;
     }
     
     @Data

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import {
@@ -14,10 +14,6 @@ import {
   FiGrid,
   FiBarChart2,
   FiTag,
-  FiDatabase,
-  FiTruck,
-  FiClipboard,
-  FiChevronDown,
   FiStar,
 } from 'react-icons/fi';
 import { MdPets, MdSpa } from 'react-icons/md';
@@ -25,14 +21,12 @@ import { MdPets, MdSpa } from 'react-icons/md';
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [inventoryMenuOpen, setInventoryMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
   const menuItems = [
-    { path: '/admin', icon: FiBarChart2, label: 'Dashboard', exact: true },
-    { path: '/admin/reports', icon: FiBarChart2, label: 'Báo cáo kinh doanh' },
+    { path: '/admin', icon: FiBarChart2, label: 'Thống kê & Báo cáo', exact: true },
     { path: '/admin/products', icon: FiPackage, label: 'Sản phẩm' },
     { path: '/admin/categories', icon: FiGrid, label: 'Danh mục' },
     { path: '/admin/sales', icon: FiShoppingCart, label: 'Đơn hàng' },
@@ -43,24 +37,11 @@ const AdminLayout = () => {
     { path: '/admin/reviews', icon: FiStar, label: 'Đánh giá' },
     { path: '/admin/reminders', icon: FiBell, label: 'Nhắc nhở Spa' },
   ];
-  const inventoryItems = [
-    { path: '/admin/inventory', icon: FiDatabase, label: 'Kho hàng' },
-    { path: '/admin/suppliers', icon: FiTruck, label: 'Nhà cung cấp' },
-    { path: '/admin/purchase-orders', icon: FiClipboard, label: 'Phiếu nhập kho' },
-    { path: '/admin/stock-audits', icon: FiSearch, label: 'Kiểm kê' },
-  ];
 
   const isActive = (path, exact = false) => {
     if (exact) return location.pathname === path;
     return location.pathname.startsWith(path);
   };
-  const isInventorySectionActive = inventoryItems.some((item) => isActive(item.path));
-
-  useEffect(() => {
-    if (isInventorySectionActive) {
-      setInventoryMenuOpen(true);
-    }
-  }, [isInventorySectionActive]);
 
   const handleLogout = () => {
     logout();
@@ -120,51 +101,6 @@ const AdminLayout = () => {
               {sidebarOpen && <span className="font-medium">{item.label}</span>}
             </Link>
           ))}
-
-          <button
-            type="button"
-            onClick={() => {
-              if (!sidebarOpen) {
-                navigate('/admin/inventory');
-                return;
-              }
-              setInventoryMenuOpen((prev) => !prev);
-            }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-              isInventorySectionActive
-                ? "bg-petshop-orange text-white shadow-lg shadow-petshop-orange/30"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <FiDatabase className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && (
-              <>
-                <span className="font-medium flex-1 text-left">Quản lý kho hàng</span>
-                <FiChevronDown
-                  className={`w-4 h-4 transition-transform ${inventoryMenuOpen ? "rotate-180" : ""}`}
-                />
-              </>
-            )}
-          </button>
-
-          {sidebarOpen && inventoryMenuOpen && (
-            <div className="ml-4 space-y-1">
-              {inventoryItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
-                    isActive(item.path)
-                      ? "bg-petshop-orange/15 text-petshop-orange font-semibold"
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="text-sm">{item.label}</span>
-                </Link>
-              ))}
-            </div>
-          )}
         </nav>
 
         {/* Collapse Button */}

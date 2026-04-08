@@ -96,8 +96,6 @@ public class ProductServiceImpl implements ProductService {
                     .sku(varReq.getSku())
                     .price(varReq.getPrice())
                     .stock(varReq.getStock())
-                    .minStock(varReq.getMinStock())
-                    .expiryDate(varReq.getExpiryDate())
                     .active(true)
                     .build())
                 .collect(Collectors.toList());
@@ -178,8 +176,6 @@ public class ProductServiceImpl implements ProductService {
                     .sku(varReq.getSku())
                     .price(varReq.getPrice())
                     .stock(varReq.getStock())
-                    .minStock(varReq.getMinStock())
-                    .expiryDate(varReq.getExpiryDate())
                     .active(true)
                     .build());
             }
@@ -374,8 +370,6 @@ public class ProductServiceImpl implements ProductService {
                     .sku(v.getSku())
                     .price(v.getPrice())
                     .stock(v.getStock())
-                    .minStock(v.getMinStock())
-                    .expiryDate(v.getExpiryDate())
                     .active(v.isActive())
                     .build())
                 .collect(Collectors.toList());

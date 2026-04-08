@@ -41,7 +41,6 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final VoucherRepository voucherRepository;
     private final VoucherUsageLogRepository voucherUsageLogRepository;
-    private final StockMovementRepository stockMovementRepository;
     private final CartService cartService;
     private final RewardService rewardService;
     private final VoucherService voucherService;
@@ -159,25 +158,9 @@ public class OrderServiceImpl implements OrderService {
             orderItemRepository.save(orderItem);
             order.getItems().add(orderItem);
 
-            // Reduce stock and create EXPORT movement
-            int prevStock = variant.getStock();
-            int newStock = prevStock - itemData.quantity;
-            variant.setStock(newStock);
+            // Reduce stock
+            variant.setStock(variant.getStock() - itemData.quantity);
             productVariantRepository.save(variant);
-
-            stockMovementRepository.save(StockMovement.builder()
-                .variant(variant)
-                .movementType(StockMovement.MovementType.EXPORT_SALE)
-                .quantity(-itemData.quantity)
-                .quantityBefore(prevStock)
-                .quantityAfter(newStock)
-                .unitCost(variant.getAverageCost())
-                .referenceType("ORDER")
-                .referenceCode(order.getOrderCode())
-                .note("Xuất kho cho đơn hàng " + order.getOrderCode())
-                .order(order)
-                .createdBy(user)
-                .build());
 
             // Update sold count
             Product product = variant.getProduct();
@@ -463,23 +446,8 @@ public class OrderServiceImpl implements OrderService {
     private void restoreStock(Order order) {
         for (OrderItem item : order.getItems()) {
             ProductVariant variant = item.getVariant();
-            int prevStock = variant.getStock();
-            int newStock = prevStock + item.getQuantity();
-            variant.setStock(newStock);
+            variant.setStock(variant.getStock() + item.getQuantity());
             productVariantRepository.save(variant);
-
-            stockMovementRepository.save(StockMovement.builder()
-                .variant(variant)
-                .movementType(StockMovement.MovementType.ADJUST_IN)
-                .quantity(item.getQuantity())
-                .quantityBefore(prevStock)
-                .quantityAfter(newStock)
-                .unitCost(variant.getAverageCost())
-                .referenceType("ORDER_CANCEL")
-                .referenceCode(order.getOrderCode())
-                .note("Hoàn kho do hủy đơn " + order.getOrderCode())
-                .order(order)
-                .build());
             
             // Reduce sold count
             Product product = variant.getProduct();

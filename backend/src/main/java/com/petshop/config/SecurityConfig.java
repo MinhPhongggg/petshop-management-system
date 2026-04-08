@@ -82,10 +82,6 @@ public class SecurityConfig {
                         // Booking availability check
                         .requestMatchers(HttpMethod.GET, "/api/bookings/check-availability").permitAll()
                         
-                        // MoMo IPN callback (server-to-server, no auth)
-                        .requestMatchers(HttpMethod.POST, "/api/payments/momo/ipn").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/payments/momo/redirect").permitAll()
-                        
                         // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )

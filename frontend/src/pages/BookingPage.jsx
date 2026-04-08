@@ -5,7 +5,7 @@ import { FiCalendar, FiClock, FiUser, FiCheck, FiAlertCircle } from 'react-icons
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
-import { servicesApi, petsApi, bookingsApi, paymentsApi } from '../services/api';
+import { servicesApi, petsApi, bookingsApi } from '../services/api';
 
 const BookingPage = () => {
   const [searchParams] = useSearchParams();
@@ -31,7 +31,6 @@ const BookingPage = () => {
     petType: 'DOG',
     petBreed: '',
     petWeight: '',
-    payWithDeposit: true, // Mặc định đặt cọc MoMo
   });
 
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -165,7 +164,7 @@ const BookingPage = () => {
 
     setSubmitting(true);
     try {
-      const bookingResponse = await bookingsApi.create({
+      await bookingsApi.create({
         serviceId: parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id,
         petId: formData.petId && formData.petId !== 'new' ? parseInt(formData.petId) : null,
         bookingDate: formData.date,
@@ -181,37 +180,6 @@ const BookingPage = () => {
           weight: parseFloat(formData.petWeight) || null,
         } : null,
       });
-
-      const createdBooking = bookingResponse.data;
-
-      // Nếu chọn đặt cọc MoMo
-      if (formData.payWithDeposit && isAuthenticated) {
-        try {
-          const depositResponse = await paymentsApi.createBookingDeposit(createdBooking.id);
-          const depositData = depositResponse.data;
-
-          if (depositData.mockMode) {
-            // Mock mode → chuyển đến trang thanh toán mock
-            navigate(`/booking/momo-deposit/${createdBooking.id}`, {
-              state: {
-                booking: createdBooking,
-                deposit: depositData,
-              }
-            });
-          } else if (depositData.payUrl) {
-            // Real MoMo → chuyển đến trang deposit rồi mở cổng thanh toán thật
-            navigate(`/booking/momo-deposit/${createdBooking.id}`, {
-              state: {
-                booking: createdBooking,
-                deposit: depositData,
-              }
-            });
-          }
-          return;
-        } catch (depositError) {
-          toast.error(depositError.response?.data?.message || 'Không thể tạo thanh toán cọc. Lịch hẹn đã tạo, bạn có thể thanh toán sau.');
-        }
-      }
 
       toast.success('Đặt lịch thành công! Chúng tôi sẽ liên hệ xác nhận.');
       navigate('/');
@@ -754,17 +722,9 @@ const BookingPage = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className={`flex-1 disabled:opacity-50 font-semibold py-3 rounded-xl transition-all ${
-                      formData.payWithDeposit && isAuthenticated
-                        ? 'bg-pink-500 hover:bg-pink-600 text-white'
-                        : 'btn-primary'
-                    }`}
+                    className="btn-primary flex-1 disabled:opacity-50"
                   >
-                    {submitting
-                      ? 'Đang xử lý...'
-                      : formData.payWithDeposit && isAuthenticated
-                        ? 'Đặt cọc & Xác nhận qua MoMo'
-                        : 'Xác nhận đặt lịch'}
+                    {submitting ? 'Đang xử lý...' : 'Xác nhận đặt lịch'}
                   </button>
                 )}
               </div>

@@ -20,7 +20,4 @@ public interface UserRewardRepository extends JpaRepository<UserReward, Long> {
 
     // Đếm số voucher chưa dùng của user
     long countByUserIdAndVoucherUsedFalse(Long userId);
-
-    @org.springframework.data.jpa.repository.Query("SELECT ur.user.id, ur.user.fullName, COUNT(ur.id) FROM UserReward ur GROUP BY ur.user.id, ur.user.fullName ORDER BY COUNT(ur.id) DESC")
-    List<Object[]> getTopUsersByRewardUnlockCount(org.springframework.data.domain.Pageable pageable);
 }

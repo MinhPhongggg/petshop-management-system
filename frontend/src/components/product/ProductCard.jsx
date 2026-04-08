@@ -31,12 +31,10 @@ const ProductCard = ({ product }) => {
 
   // Get product image - BE returns primaryImage or images array with imageUrl
   const getProductImage = () => {
-    return product.primaryImage || product.images?.[0]?.imageUrl || product.images?.[0]?.url || '/images/paw-pattern.svg';
-  };
-
-  const handleImageError = (e) => {
-    e.target.onerror = null;
-    e.target.src = '/images/paw-pattern.svg';
+    if (product.primaryImage) return product.primaryImage;
+    if (product.images?.[0]?.imageUrl) return product.images[0].imageUrl;
+    if (product.images?.[0]?.url) return product.images[0].url;
+    return '/images/placeholder-product.jpg';
   };
 
   const formatPrice = (price) => {
@@ -57,7 +55,6 @@ const ProductCard = ({ product }) => {
           <img
             src={getProductImage()}
             alt={product.name}
-            onError={handleImageError}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
           />
           

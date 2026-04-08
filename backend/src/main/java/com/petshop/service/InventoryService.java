@@ -12,9 +12,6 @@ public interface InventoryService {
     
     // Nhập hàng
     StockMovementDTO importStock(StockMovementRequest request);
-
-    // Xuất hàng (hủy, trả NCC, xử lý nội bộ)
-    StockMovementDTO exportStock(StockMovementRequest request);
     
     // Điều chỉnh số lượng
     StockMovementDTO adjustStock(StockMovementRequest request)  ;
@@ -27,10 +24,4 @@ public interface InventoryService {
     
     // Sản phẩm hết hàng
     List<ProductVariantDTO> getOutOfStockProducts();
-    
-    // Sản phẩm sắp hết hạn sử dụng
-    List<ProductVariantDTO> getExpiringProducts();
-
-    // Sản phẩm tồn vượt định mức
-    List<ProductVariantDTO> getOverStockProducts();
 }

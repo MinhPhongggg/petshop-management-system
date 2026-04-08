@@ -66,14 +66,6 @@ public class BookingDTO {
     private Booking.PaymentStatus paymentStatus;
     private String cancelReason;
     
-    // Deposit (Đặt cọc)
-    private Booking.DepositStatus depositStatus;
-    private BigDecimal depositAmount;
-    private BigDecimal remainingAmount;
-    private String momoTransactionId;
-    private LocalDateTime depositExpiresAt;
-    private LocalDateTime depositPaidAt;
-    
     // Review
     private Boolean reviewed;
     

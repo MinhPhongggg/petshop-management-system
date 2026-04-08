@@ -44,18 +44,6 @@ public class StockMovement {
     @Column(columnDefinition = "TEXT")
     private String note;
 
-    // Giá vốn snapshot tại thời điểm phát sinh (để tính lợi nhuận lịch sử)
-    @Column(name = "unit_cost", precision = 12, scale = 2)
-    private java.math.BigDecimal unitCost;
-
-    // Loại chứng từ tham chiếu
-    @Column(name = "reference_type", length = 30)
-    private String referenceType;
-
-    // Mã chứng từ tham chiếu
-    @Column(name = "reference_code", length = 100)
-    private String referenceCode;
-
     // Liên kết đến đơn hàng (nếu là xuất kho do bán)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
@@ -71,11 +59,10 @@ public class StockMovement {
     private LocalDateTime createdAt;
 
     public enum MovementType {
-        IMPORT,                    // Nhập hàng
-        EXPORT_SALE,               // Xuất bán
-        EXPORT_DAMAGE,             // Xuất hủy/hỏng
-        EXPORT_RETURN_SUPPLIER,    // Trả nhà cung cấp
-        ADJUST_IN,                 // Điều chỉnh tăng
-        ADJUST_OUT                 // Điều chỉnh giảm
+        IMPORT,         // Nhập hàng
+        EXPORT,         // Xuất hàng (bán)
+        ADJUSTMENT,     // Điều chỉnh
+        RETURN,         // Trả hàng
+        DAMAGED         // Hàng hỏng
     }
 }

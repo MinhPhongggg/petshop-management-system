@@ -174,7 +174,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    "ORDER BY service_spending DESC LIMIT 10", nativeQuery = true)
     List<Object[]> getVipPetServiceSpending();
 
-<<<<<<< HEAD
        // Booking COMPLETED trong khoảng thời gian cần nhắc nhở và chưa từng gửi nhắc nhở
        @Query(value = "SELECT b.* FROM bookings b " +
                                "WHERE b.status = 'COMPLETED' " +
@@ -193,36 +192,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                "AND NOT EXISTS (SELECT 1 FROM spa_reminder_logs r WHERE r.booking_id = b.id)",
                  nativeQuery = true)
        List<Booking> findAllCompletedNotReminded();
-=======
-    // Tìm bookings COMPLETED để gửi nhắc nhở spa
-    @Query("SELECT b FROM Booking b " +
-           "JOIN FETCH b.user u " +
-           "JOIN FETCH b.pet p " +
-           "JOIN FETCH b.service s " +
-           "WHERE b.status = 'COMPLETED' " +
-           "AND ((b.completedAt IS NOT NULL AND b.completedAt BETWEEN :startDate AND :endDate) " +
-           "  OR (b.completedAt IS NULL AND b.bookingDate BETWEEN :startLocalDate AND :endLocalDate)) " +
-           "AND u.active = true " +
-           "AND NOT EXISTS (SELECT r FROM SpaReminderLog r WHERE r.booking.id = b.id) " +
-           "AND NOT EXISTS (SELECT b2 FROM Booking b2 WHERE b2.user.id = b.user.id " +
-           "    AND b2.pet.id = b.pet.id AND b2.status NOT IN ('CANCELLED', 'NO_SHOW') " +
-           "    AND b2.bookingDate > b.bookingDate)")
-    List<Booking> findCompletedBookingsForReminder(@Param("startDate") LocalDateTime startDate,
-                                                    @Param("endDate") LocalDateTime endDate,
-                                                    @Param("startLocalDate") LocalDate startLocalDate,
-                                                    @Param("endLocalDate") LocalDate endLocalDate);
-
-    @Query("SELECT b FROM Booking b " +
-           "JOIN FETCH b.user u " +
-           "JOIN FETCH b.pet p " +
-           "JOIN FETCH b.service s " +
-           "WHERE b.status = 'COMPLETED' " +
-           "AND u.active = true " +
-           "AND NOT EXISTS (SELECT r FROM SpaReminderLog r WHERE r.booking.id = b.id) " +
-           "ORDER BY COALESCE(b.completedAt, CAST(b.bookingDate AS timestamp)) DESC")
-    List<Booking> findAllCompletedNotReminded();
-
-    // Deposit expiration: tìm booking DEPOSIT_PENDING đã hết hạn
-    List<Booking> findByStatusAndDepositExpiresAtBefore(Booking.BookingStatus status, LocalDateTime now);
->>>>>>> 4cf6cd4f31089aa9461565fe3d5aec40d837e930
 }

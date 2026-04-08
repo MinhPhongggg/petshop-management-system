@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiFilter, FiGrid, FiList, FiChevronDown, FiChevronRight, FiX, FiSearch, FiGift, FiEye, FiClock } from 'react-icons/fi';
+import { FiFilter, FiGrid, FiList, FiChevronDown, FiChevronRight, FiX, FiSearch, FiGift } from 'react-icons/fi';
 import ProductCard from '../components/product/ProductCard';
 import { productsApi, categoriesApi, rewardsApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
-import toast from 'react-hot-toast';
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,10 +17,6 @@ const ProductsPage = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [expandedCategories, setExpandedCategories] = useState(new Set());
   const [rewardInfo, setRewardInfo] = useState(null);
-  const [watchProduct, setWatchProduct] = useState(null); // product đang xem để nhận voucher
-  const [watchSeconds, setWatchSeconds] = useState(0);
-  const [watchClaimed, setWatchClaimed] = useState(false);
-  const [watchClaiming, setWatchClaiming] = useState(false);
 
   const [filters, setFilters] = useState({
     category: searchParams.get('category') || '',
@@ -66,54 +61,6 @@ const ProductsPage = () => {
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, categories]);
-
-  // Watch voucher timer
-  useEffect(() => {
-    if (!watchProduct || watchClaimed) return;
-    setWatchSeconds(0);
-    const timer = setInterval(() => {
-      setWatchSeconds(prev => {
-        if (prev >= 30) { clearInterval(timer); return 30; }
-        return prev + 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [watchProduct, watchClaimed]);
-
-  const handleOpenWatch = (product) => {
-    setWatchProduct(product);
-    setWatchSeconds(0);
-    setWatchClaimed(false);
-    setWatchClaiming(false);
-  };
-
-  const handleCloseWatch = () => {
-    setWatchProduct(null);
-    setWatchSeconds(0);
-    setWatchClaimed(false);
-  };
-
-  const handleClaimWatchVoucher = async () => {
-    if (!watchProduct || watchSeconds < 30 || watchClaimed || watchClaiming) return;
-    setWatchClaiming(true);
-    try {
-      const res = await rewardsApi.claimWatchVoucher(watchProduct.id, watchSeconds);
-      setWatchClaimed(true);
-      toast.success(`Đã nhận voucher ${res.data.code}!`);
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Không thể nhận voucher');
-    } finally {
-      setWatchClaiming(false);
-    }
-  };
-
-  const getProductImage = (product) => {
-    const raw = product.primaryImage || product.images?.[0]?.imageUrl || '';
-    if (raw && raw.startsWith('/images/')) {
-      return raw;
-    }
-    return raw || '/images/paw-pattern.svg';
-  };
 
   const fetchCategories = async () => {
     try {
@@ -360,7 +307,6 @@ const ProductsPage = () => {
   ];
 
   return (
-    <>
     <div className="min-h-screen bg-petshop-cream py-8">
       <div className="container mx-auto px-4">
         {/* Breadcrumb */}
@@ -609,19 +555,9 @@ const ProductsPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="h-full relative"
+                    className="h-full"
                   >
                     <ProductCard product={product} />
-                    {isAuthenticated && (
-                      <button
-                        onClick={() => handleOpenWatch(product)}
-                        className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-amber-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg hover:bg-amber-600 transition-colors"
-                        title="Xem 30s để nhận voucher"
-                      >
-                        <FiEye className="w-3 h-3" />
-                        Voucher
-                      </button>
-                    )}
                   </motion.div>
                 ))}
               </div>
@@ -649,106 +585,6 @@ const ProductsPage = () => {
         </div>
       </div>
     </div>
-
-    {/* Watch Voucher Modal */}
-    <AnimatePresence>
-      {watchProduct && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={handleCloseWatch}>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
-          >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-amber-400 to-orange-400 p-5 text-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FiGift className="text-xl" />
-                  <h3 className="font-bold text-lg">Xem sản phẩm nhận Voucher</h3>
-                </div>
-                <button onClick={handleCloseWatch} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
-                  <FiX size={20} />
-                </button>
-              </div>
-              <p className="text-sm opacity-90 mt-1">Xem đủ 30 giây để nhận voucher giảm giá 5%</p>
-            </div>
-
-            {/* Product Info */}
-            <div className="p-5">
-              <div className="flex gap-4 mb-6">
-                <img
-                  src={getProductImage(watchProduct)}
-                  alt={watchProduct.name}
-                  onError={(e) => { e.target.onerror = null; e.target.src = '/images/paw-pattern.svg'; }}
-                  className="w-24 h-24 object-cover rounded-xl border"
-                />
-                <div className="flex-1">
-                  <p className="text-sm text-petshop-orange font-medium">{watchProduct.categoryName || watchProduct.category?.name}</p>
-                  <h4 className="font-bold text-gray-800 text-lg leading-tight">{watchProduct.name}</h4>
-                  <p className="text-petshop-orange font-bold mt-1">
-                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(watchProduct.minPrice || watchProduct.basePrice)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Timer Progress */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-600 flex items-center gap-1">
-                    <FiClock className="w-4 h-4" />
-                    Thời gian xem
-                  </span>
-                  <span className={`text-sm font-bold ${watchSeconds >= 30 ? 'text-green-600' : 'text-amber-600'}`}>
-                    {watchSeconds}/30 giây
-                  </span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <motion.div
-                    className={`h-full rounded-full transition-colors ${watchSeconds >= 30 ? 'bg-green-500' : 'bg-gradient-to-r from-amber-400 to-orange-400'}`}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((watchSeconds / 30) * 100, 100)}%` }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-                {watchSeconds < 30 && (
-                  <p className="text-xs text-gray-400 mt-1 text-center">Giữ cửa sổ này mở để tích thời gian...</p>
-                )}
-              </div>
-
-              {/* Claim Button */}
-              <button
-                onClick={handleClaimWatchVoucher}
-                disabled={watchSeconds < 30 || watchClaimed || watchClaiming}
-                className={`w-full py-3 rounded-xl font-bold text-base transition-all ${
-                  watchClaimed
-                    ? 'bg-green-100 text-green-700 cursor-default'
-                    : watchSeconds >= 30 && !watchClaiming
-                      ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-200'
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                }`}
-              >
-                {watchClaimed
-                  ? '✅ Đã nhận voucher giảm 5%!'
-                  : watchClaiming
-                    ? 'Đang nhận...'
-                    : watchSeconds >= 30
-                      ? '🎁 Nhận voucher ngay!'
-                      : `Còn ${30 - watchSeconds} giây nữa...`}
-              </button>
-
-              {watchClaimed && (
-                <p className="text-center text-xs text-green-600 mt-2">
-                  Voucher đã được thêm vào ví của bạn. Dùng khi thanh toán!
-                </p>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
-    </>
   );
 };
 

@@ -5,7 +5,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3306/petshop_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:000000}
+    password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -78,10 +78,6 @@ petshop:
   points:
     earn-rate: 1000 # 1000 VND = 1 điểm
     redeem-value: 100 # 1 điểm = 100 VND
-  verification:
-    microsoft:
-      required: ${MICROSOFT_EMAIL_REQUIRED:false}
-    mock-authenticator: ${MOCK_MICROSOFT_AUTHENTICATOR:true}
 
   appointment:
     slot-duration: 30 # minutes
@@ -91,29 +87,14 @@ petshop:
   # Spa Reminder Configuration
   reminder:
     enabled: ${REMINDER_ENABLED:true}
-    cron: "0 0 9 * * *"
-    default-days: 14
+    cron: "0 0 9 * * *" # Chạy lúc 9h sáng mỗi ngày
+    default-days: 14 # Mặc định nhắc sau 14 ngày
     from-email: ${MAIL_USERNAME:sonlethai456@gmail.com}
     from-name: "PetShop Spa"
     booking-url: ${BOOKING_URL:http://localhost:3000/booking}
+    # Quy tắc nhắc nhở theo loại dịch vụ/thú cưng
     rules:
-      dog-long-hair: 14
-      dog-short-hair: 21
-      cat: 21
-      default: 14
-
-  deposit:
-    percentage: 30
-    min-amount: 50000
-    timeout-minutes: 15
-    refund-before-hours: 24
-
-# MoMo Payment Configuration (Sandbox/Test)
-momo:
-  partner-code: ${MOMO_PARTNER_CODE:MOMOBKUN20180529}
-  access-key: ${MOMO_ACCESS_KEY:klm05TvNBzhg7h7j}
-  secret-key: ${MOMO_SECRET_KEY:at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa}
-  api-url: ${MOMO_API_URL:https://test-payment.momo.vn/v2/gateway/api}
-  redirect-url: ${MOMO_REDIRECT_URL:http://localhost:3000/booking/momo-result}
-  ipn-url: ${MOMO_IPN_URL:http://localhost:8080/api/payments/momo/ipn}
-  mock-enabled: ${MOMO_MOCK_ENABLED:false}
+      dog-long-hair: 14  # Chó lông dài: Nhắc sau 14 ngày
+      dog-short-hair: 21 # Chó lông ngắn: Nhắc sau 21 ngày
+      cat: 21             # Mèo: Nhắc sau 21 ngày
+      default: 14         # Mặc định: 14 ngày

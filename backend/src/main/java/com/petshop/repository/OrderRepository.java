@@ -85,44 +85,4 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Số đơn hoàn thành của 1 user
     @Query("SELECT COUNT(o) FROM Order o WHERE o.user.id = :userId AND o.status = 'COMPLETED'")
     long countCompletedOrdersByUserId(@Param("userId") Long userId);
-
-    @Query("SELECT COALESCE(SUM(o.subtotal), 0) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :startDate AND :endDate")
-    BigDecimal getGrossRevenue(@Param("startDate") LocalDateTime startDate,
-                               @Param("endDate") LocalDateTime endDate);
-
-    @Query("SELECT COALESCE(SUM(o.discountAmount), 0) FROM Order o WHERE o.status = 'COMPLETED' AND o.createdAt BETWEEN :startDate AND :endDate")
-    BigDecimal getTotalDiscount(@Param("startDate") LocalDateTime startDate,
-                                @Param("endDate") LocalDateTime endDate);
-
-    @Query(value = "SELECT p.id, p.name, COALESCE(SUM(oi.quantity),0) qty, COALESCE(SUM(oi.subtotal),0) revenue " +
-            "FROM order_items oi " +
-            "JOIN orders o ON oi.order_id = o.id " +
-            "JOIN product_variants pv ON oi.variant_id = pv.id " +
-            "JOIN products p ON pv.product_id = p.id " +
-            "WHERE o.status = 'COMPLETED' AND o.created_at BETWEEN :startDate AND :endDate " +
-            "GROUP BY p.id, p.name ORDER BY qty DESC LIMIT :limit", nativeQuery = true)
-    List<Object[]> getTopSellingProductsByPeriod(@Param("startDate") LocalDateTime startDate,
-                                                 @Param("endDate") LocalDateTime endDate,
-                                                 @Param("limit") int limit);
-
-    @Query(value = "SELECT p.id, p.name, MAX(o.created_at) last_sold_at, COALESCE(SUM(oi.quantity),0) sold_qty " +
-            "FROM products p " +
-            "LEFT JOIN product_variants pv ON p.id = pv.product_id " +
-            "LEFT JOIN order_items oi ON pv.id = oi.variant_id " +
-            "LEFT JOIN orders o ON oi.order_id = o.id AND o.status = 'COMPLETED' " +
-            "GROUP BY p.id, p.name " +
-            "ORDER BY last_sold_at ASC LIMIT :limit", nativeQuery = true)
-    List<Object[]> getSlowMovingProducts(@Param("limit") int limit);
-
-    @Query(value = "SELECT u.id, u.full_name, COALESCE(SUM(o.total_amount),0) spend, COUNT(o.id) completed_orders " +
-            "FROM users u " +
-            "LEFT JOIN orders o ON u.id = o.user_id AND o.status = 'COMPLETED' " +
-            "GROUP BY u.id, u.full_name ORDER BY spend DESC LIMIT :limit", nativeQuery = true)
-    List<Object[]> getTopCustomersBySpend(@Param("limit") int limit);
-
-    @Query(value = "SELECT o.id, o.order_code, o.total_amount, o.discount_amount, o.created_at " +
-            "FROM orders o WHERE o.status = 'COMPLETED' AND o.created_at BETWEEN :startDate AND :endDate " +
-            "ORDER BY o.created_at DESC", nativeQuery = true)
-    List<Object[]> getCompletedOrdersForDrilldown(@Param("startDate") LocalDateTime startDate,
-                                                  @Param("endDate") LocalDateTime endDate);
 }
