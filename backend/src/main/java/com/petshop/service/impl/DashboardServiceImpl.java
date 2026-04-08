@@ -91,13 +91,18 @@ public class DashboardServiceImpl implements DashboardService {
         List<DashboardDTO.TopProductDTO> topProducts = productRepository
             .findBestSelling(PageRequest.of(0, 5))
             .stream()
-            .map(product -> DashboardDTO.TopProductDTO.builder()
-                .productId(product.getId())
-                .productName(product.getName())
-                .productImage(product.getImages().isEmpty() ? null : product.getImages().get(0).getImageUrl())
-                .soldCount(product.getSoldCount())
-                .revenue(product.getBasePrice().multiply(BigDecimal.valueOf(product.getSoldCount())))
-                .build())
+            .map(product -> {
+                int soldCount = product.getSoldCount();
+                BigDecimal basePrice = product.getBasePrice() != null ? product.getBasePrice() : BigDecimal.ZERO;
+                return DashboardDTO.TopProductDTO.builder()
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    // Keep this null-safe to avoid lazy-loading issues on image collections.
+                    .productImage(null)
+                    .soldCount(soldCount)
+                    .revenue(basePrice.multiply(BigDecimal.valueOf(soldCount)))
+                    .build();
+            })
             .collect(Collectors.toList());
         
         // Daily revenue (within date range)
@@ -131,10 +136,12 @@ public class DashboardServiceImpl implements DashboardService {
             .map(order -> DashboardDTO.RecentOrderDTO.builder()
                 .id(order.getId())
                 .orderNumber(order.getOrderCode())
-                .customer(order.getUser().getFullName())
-                .amount(order.getTotalAmount())
+                .customer(order.getUser() != null ? order.getUser().getFullName() : order.getReceiverName())
+                .amount(order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO)
                 .status(order.getStatus().name())
-                .createdAt(order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                .createdAt(order.getCreatedAt() != null
+                        ? order.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        : null)
                 .build())
             .collect(Collectors.toList());
         
@@ -145,10 +152,12 @@ public class DashboardServiceImpl implements DashboardService {
             .map(booking -> DashboardDTO.RecentBookingDTO.builder()
                 .id(booking.getId())
                 .bookingCode(booking.getBookingCode())
-                .customer(booking.getUser().getFullName())
-                .service(booking.getService().getName())
+                .customer(booking.getUser() != null ? booking.getUser().getFullName() : null)
+                .service(booking.getService() != null ? booking.getService().getName() : null)
                 .status(booking.getStatus().name())
-                .bookingDate(booking.getBookingDate().format(DateTimeFormatter.ISO_LOCAL_DATE))
+                .bookingDate(booking.getBookingDate() != null
+                        ? booking.getBookingDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        : null)
                 .build())
             .collect(Collectors.toList());
         

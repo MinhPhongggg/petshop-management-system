@@ -255,7 +255,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                     long count = ((Number) row[1]).longValue();
                     double pct = totalPets > 0 ? ((double) count / totalPets) * 100 : 0;
                     return AnalyticsDTO.PetTypeDistribution.builder()
-                            .petType((String) row[0])
+                    .petType(row[0] != null ? row[0].toString() : "UNKNOWN")
                             .count(count)
                             .percentage(Math.round(pct * 10.0) / 10.0)
                             .build();
@@ -285,7 +285,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                     .customerId(((Number) row[0]).longValue())
                     .customerName((String) row[1])
                     .petName((String) row[2])
-                    .petType((String) row[3])
+                    .petType(row[3] != null ? row[3].toString() : "UNKNOWN")
                     .totalVisits(totalVisits)
                     .avgDaysBetweenVisits(Math.round(avgDays * 10.0) / 10.0)
                     .lastVisitDate(lastVisit)
@@ -319,7 +319,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                     return AnalyticsDTO.VipPet.builder()
                             .petId(((Number) row[0]).longValue())
                             .petName((String) row[1])
-                            .petType((String) row[2])
+                            .petType(row[2] != null ? row[2].toString() : "UNKNOWN")
                             .breed(row[3] != null ? (String) row[3] : "Không rõ")
                             .ownerName((String) row[4])
                             .totalBookings(((Number) row[5]).longValue())

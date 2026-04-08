@@ -61,6 +61,7 @@ export const productsApi = {
   getNew: (limit = 10) => api.get('/products/new', { params: { limit } }),
   create: (data) => api.post('/products', data),
   update: (id, data) => api.put(`/products/${id}`, data),
+  toggleActive: (id) => api.patch(`/products/${id}/toggle-active`),
   delete: (id) => api.delete(`/products/${id}`),
 };
 
@@ -68,6 +69,7 @@ export const productsApi = {
 export const categoriesApi = {
   getAll: () => api.get('/categories'),
   getTree: () => api.get('/categories/tree'),
+  getAdminTree: () => api.get('/categories/admin/tree'),
   getById: (id) => api.get(`/categories/${id}`),
   getBySlug: (slug) => api.get(`/categories/slug/${slug}`),
   getByPetType: (petType) => api.get(`/categories/pet-type/${petType}`),
@@ -93,11 +95,6 @@ export const bookingsApi = {
   getMyBookings: (params) => api.get('/bookings/my-bookings', { params }),
   getById: (id) => api.get(`/bookings/${id}`),
   getByCode: (code) => api.get(`/bookings/code/${code}`),
-<<<<<<< Updated upstream
-  cancel: (id, reason) => api.post(`/bookings/${id}/cancel`, null, { params: { reason } }),
-  checkAvailability: (date, startTime, endTime) => 
-    api.get('/bookings/check-availability', { params: { date, startTime, endTime } }),
-=======
   getPromotionProgress: (petId, serviceId) =>
     api.get("/bookings/promotion-progress", { params: { petId, serviceId } }),
   cancel: (id, reason) =>
@@ -106,24 +103,34 @@ export const bookingsApi = {
     api.get("/bookings/check-availability", {
       params: { date, startTime, endTime },
     }),
->>>>>>> Stashed changes
   // Admin
   getAll: (params) => api.get('/bookings', { params }),
   getByDate: (date) => api.get(`/bookings/date/${date}`),
   getByStatus: (status, params) => api.get(`/bookings/status/${status}`, { params }),
+  updateStatus: (id, newStatus, reason = 'Cập nhật bởi quản trị viên') => {
+    switch (newStatus) {
+      case 'CONFIRMED':
+        return api.post(`/bookings/${id}/confirm`);
+      case 'IN_PROGRESS':
+        return api.post(`/bookings/${id}/start`);
+      case 'COMPLETED':
+        return api.post(`/bookings/${id}/complete`);
+      case 'CANCELLED':
+        return api.post(`/bookings/${id}/admin-cancel`, null, { params: { reason } });
+      case 'NO_SHOW':
+        return api.post(`/bookings/${id}/no-show`);
+      default:
+        return Promise.reject(new Error(`Unsupported booking status: ${newStatus}`));
+    }
+  },
   confirm: (id) => api.post(`/bookings/${id}/confirm`),
   start: (id) => api.post(`/bookings/${id}/start`),
-<<<<<<< Updated upstream
-  complete: (id, staffNote) => api.post(`/bookings/${id}/complete`, null, { params: { staffNote } }),
-  adminCancel: (id, reason) => api.post(`/bookings/${id}/admin-cancel`, null, { params: { reason } }),
-=======
   previewPayment: (id) => api.get(`/bookings/${id}/payment-preview`),
   pay: (id) => api.post(`/bookings/${id}/pay`),
   complete: (id, staffNote) =>
     api.post(`/bookings/${id}/complete`, null, { params: { staffNote } }),
   adminCancel: (id, reason) =>
     api.post(`/bookings/${id}/admin-cancel`, null, { params: { reason } }),
->>>>>>> Stashed changes
   markNoShow: (id) => api.post(`/bookings/${id}/no-show`),
   assignStaff: (id, staffId) => api.post(`/bookings/${id}/assign-staff`, null, { params: { staffId } }),
 };
@@ -157,6 +164,29 @@ export const ordersApi = {
     api.post(`/orders/${id}/payment-status`, null, { params: { status, transactionId } }),
 };
 
+// Vouchers API
+export const vouchersApi = {
+  getActive: () => api.get('/vouchers/active'),
+  getAll: (params) => api.get('/vouchers', { params }),
+  getById: (id) => api.get(`/vouchers/${id}`),
+  getByCode: (code) => api.get(`/vouchers/code/${code}`),
+  apply: (code, orderAmount) => api.post('/vouchers/apply', null, { params: { code, orderAmount } }),
+  create: (data) => api.post('/vouchers', data),
+  update: (id, data) => api.put(`/vouchers/${id}`, data),
+  delete: (id) => api.delete(`/vouchers/${id}`),
+  getUsageHistory: (id, params) => api.get(`/vouchers/${id}/usage-history`, { params }),
+  saveVoucher: (id) => api.post(`/vouchers/save/${id}`),
+  unsaveVoucher: (id) => api.delete(`/vouchers/unsave/${id}`),
+  getMySaved: () => api.get('/vouchers/my-saved'),
+};
+
+// Rewards API
+export const rewardsApi = {
+  getMyProgress: () => api.get('/rewards/my-progress'),
+  getTiers: () => api.get('/rewards/tiers'),
+  getUserProgress: (userId) => api.get(`/rewards/user/${userId}`),
+};
+
 // Pets API
 export const petsApi = {
   getMyPets: () => api.get('/pets'),
@@ -168,6 +198,7 @@ export const petsApi = {
 
 // Reviews API
 export const reviewsApi = {
+  getAll: (params) => api.get('/reviews', { params }),
   getByProduct: (productId, params) => api.get(`/reviews/product/${productId}`, { params }),
   create: (data) => api.post('/reviews', data),
   getMyReviews: (params) => api.get('/reviews/my-reviews', { params }),
@@ -182,6 +213,27 @@ export const reviewsApi = {
 export const dashboardApi = {
   getDashboard: () => api.get('/dashboard'),
   getDashboardByRange: (startDate, endDate) => api.get('/dashboard/range', { params: { startDate, endDate } }),
+};
+
+// Analytics API (Admin/Staff)
+export const analyticsApi = {
+  getFull: () => api.get('/analytics'),
+  getFullAnalytics: () => api.get('/analytics'),
+  getByRange: (startDate, endDate) => api.get('/analytics/range', { params: { startDate, endDate } }),
+  getServices: (params) => api.get('/analytics/services', { params }),
+  getInventory: () => api.get('/analytics/inventory'),
+  getPets: () => api.get('/analytics/pets'),
+};
+
+// Spa Reminder API (Admin)
+export const spaReminderApi = {
+  sendAll: () => api.post('/spa-reminders/send'),
+  sendOne: (bookingId) => api.post(`/spa-reminders/send/${bookingId}`),
+  triggerReminders: () => api.post('/spa-reminders/send'),
+  sendManualReminder: (bookingId) => api.post(`/spa-reminders/send/${bookingId}`),
+  getLogs: (params) => api.get('/spa-reminders/logs', { params }),
+  getStats: () => api.get('/spa-reminders/stats'),
+  getEligible: () => api.get('/spa-reminders/eligible'),
 };
 
 // Users API (Admin)

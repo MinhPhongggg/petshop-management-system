@@ -7,7 +7,7 @@ import { bookingsApi } from '../../services/api';
 
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
-  const [promotionProgressByPair, setPromotionProgressByPair] = useState({});
+  const [promotionProgressByPair] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
 
@@ -17,93 +17,15 @@ const MyBookingsPage = () => {
 
   const fetchBookings = async () => {
     try {
-<<<<<<< Updated upstream
       const response = await bookingsApi.getMyBookings();
       setBookings(response.data);
     } catch (error) {
       console.error('Error fetching bookings:', error);
-=======
-      const response = await bookingsApi.getMyBookings({ size: 100 });
-      const data = response.data;
-      // Xử lý cả 2 trường hợp: dữ liệu phân trang (Page) hoặc mảng thường
-      const bookingList = data.content || (Array.isArray(data) ? data : []);
-      setBookings(bookingList);
-
-      const uniquePairs = [
-        ...new Set(
-          bookingList
-            .filter((b) => b.petId && b.serviceId)
-            .map((b) => `${b.petId}-${b.serviceId}`)
-        )
-      ];
-      if (uniquePairs.length > 0) {
-        const progressEntries = await Promise.all(
-          uniquePairs.map(async (pairKey) => {
-            const [petIdRaw, serviceIdRaw] = pairKey.split('-');
-            const petId = Number(petIdRaw);
-            const serviceId = Number(serviceIdRaw);
-            try {
-              const progressRes = await bookingsApi.getPromotionProgress(petId, serviceId);
-              return [pairKey, progressRes.data];
-            } catch (err) {
-              return [pairKey, null];
-            }
-          })
-        );
-
-        setPromotionProgressByPair(Object.fromEntries(progressEntries));
-      } else {
-        setPromotionProgressByPair({});
-      }
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      setBookings([]);
-      setPromotionProgressByPair({});
->>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
   };
 
-<<<<<<< Updated upstream
-=======
-  const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm('Bạn có chắc muốn hủy lịch hẹn này?')) return;
-    try {
-      await bookingsApi.cancel(bookingId, 'Khách hàng tự hủy');
-      toast.success('Đã hủy lịch hẹn');
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Không thể hủy lịch hẹn');
-    }
-  };
-
-  const handleRebook = (booking) => {
-    navigate(`/booking?service=${booking.serviceId}`);
-  };
-
-  const handlePayBooking = async (booking) => {
-    try {
-      const previewRes = await bookingsApi.previewPayment(booking.id);
-      const preview = previewRes.data;
-
-      const confirmMessage = preview.willBeFree
-        ? `Bạn đủ điều kiện Khuyến mãi 3 tặng 1 (cùng dịch vụ). Số tiền thanh toán: ${formatPrice(preview.finalPrice)}. Xác nhận thanh toán?`
-        : `Số tiền cần thanh toán: ${formatPrice(preview.finalPrice)}. Xác nhận thanh toán?`;
-
-      if (!window.confirm(confirmMessage)) {
-        return;
-      }
-
-      await bookingsApi.pay(booking.id);
-      toast.success(preview.willBeFree ? 'Thanh toán thành công - Booking này được miễn phí 100%' : 'Thanh toán thành công');
-      fetchBookings();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Không thể thanh toán booking');
-    }
-  };
-
->>>>>>> Stashed changes
   const tabs = [
     { id: 'all', label: 'Tất cả', icon: FiCalendar },
     { id: 'PENDING', label: 'Chờ xác nhận', icon: FiClock },
@@ -288,35 +210,9 @@ const MyBookingsPage = () => {
                     </button>
                   )}
                   {booking.status === 'COMPLETED' && (
-<<<<<<< Updated upstream
                     <button className="btn-primary flex items-center gap-2">
                       <FiRefreshCw /> Đặt lại
                     </button>
-=======
-                    <>
-                      {booking.paymentStatus !== 'PAID' && (
-                        <div className="flex items-center gap-2">
-                          {promotionProgressByPair[`${booking.petId}-${booking.serviceId}`]?.canApplyFreeBooking && (
-                            <span className="px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700">
-                              Đủ điều kiện miễn phí
-                            </span>
-                          )}
-                          <button
-                            onClick={() => handlePayBooking(booking)}
-                            className="px-4 py-2 bg-petshop-orange/10 text-petshop-orange rounded-xl hover:bg-petshop-orange/20 transition-colors"
-                          >
-                            Thanh toán
-                          </button>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleRebook(booking)}
-                        className="btn-primary flex items-center gap-2"
-                      >
-                        <FiRefreshCw /> Đặt lại
-                      </button>
-                    </>
->>>>>>> Stashed changes
                   )}
                 </div>
               </div>

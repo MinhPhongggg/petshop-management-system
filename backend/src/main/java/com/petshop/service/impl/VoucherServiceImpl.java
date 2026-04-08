@@ -191,9 +191,10 @@ public class VoucherServiceImpl implements VoucherService {
     }
     
     private VoucherDTO mapToDTO(Voucher voucher) {
+        int usedCount = voucher.getUsedCount() != null ? voucher.getUsedCount() : 0;
         Integer remainingUsage = null;
         if (voucher.getUsageLimit() != null) {
-            remainingUsage = voucher.getUsageLimit() - voucher.getUsedCount();
+            remainingUsage = voucher.getUsageLimit() - usedCount;
         }
         
         // Check if current user has saved this voucher
@@ -212,7 +213,7 @@ public class VoucherServiceImpl implements VoucherService {
             .maxDiscount(voucher.getMaxDiscount())
             .minOrderAmount(voucher.getMinOrderAmount())
             .usageLimit(voucher.getUsageLimit())
-            .usedCount(voucher.getUsedCount())
+            .usedCount(usedCount)
             .usageLimitPerUser(voucher.getUsageLimitPerUser())
             .remainingUsage(remainingUsage)
             .startDate(voucher.getStartDate())

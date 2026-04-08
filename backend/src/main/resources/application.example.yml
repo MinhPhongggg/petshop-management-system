@@ -42,6 +42,9 @@ logging:
     org.springframework.security: DEBUG
 
 petshop:
+  booking:
+    max-slots-per-timeslot: 3
+
   points:
     earn-rate: 1000
     redeem-value: 100

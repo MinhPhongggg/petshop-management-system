@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiGift, FiCopy, FiCheck, FiShoppingBag, FiTrendingUp, FiAward, FiChevronRight } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { rewardsApi } from '../../services/api';

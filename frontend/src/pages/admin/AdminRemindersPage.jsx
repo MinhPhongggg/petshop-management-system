@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FiMail, FiSend, FiCheckCircle, FiXCircle, FiCalendar, FiBarChart2, FiRefreshCw, FiUsers, FiClock } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
@@ -16,11 +16,7 @@ const AdminRemindersPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [activeTab, setActiveTab] = useState('ready');
 
-  useEffect(() => {
-    fetchData();
-  }, [currentPage]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [logsRes, statsRes, eligibleRes] = await Promise.all([
@@ -38,7 +34,11 @@ const AdminRemindersPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleTriggerReminders = async () => {
     const readyCount = eligible.filter(e => e.ready).length;

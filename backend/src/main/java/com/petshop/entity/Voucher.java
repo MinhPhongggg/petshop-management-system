@@ -126,16 +126,25 @@ public class Voucher {
 
     // Helper: Kiểm tra voucher còn hiệu lực
     public boolean isValid() {
+        if (startDate == null || endDate == null) {
+            return false;
+        }
         LocalDateTime now = LocalDateTime.now();
-        return active && 
-               now.isAfter(startDate) && 
-               now.isBefore(endDate) &&
-               (usageLimit == null || usedCount < usageLimit);
+        int used = usedCount != null ? usedCount : 0;
+        return Boolean.TRUE.equals(active) &&
+               !now.isBefore(startDate) &&
+               !now.isAfter(endDate) &&
+               (usageLimit == null || used < usageLimit);
     }
 
     // Helper: Tính số tiền giảm
     public BigDecimal calculateDiscount(BigDecimal orderAmount) {
-        if (orderAmount.compareTo(minOrderAmount) < 0) {
+        if (orderAmount == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal minAmount = minOrderAmount != null ? minOrderAmount : BigDecimal.ZERO;
+        if (orderAmount.compareTo(minAmount) < 0 || discountValue == null || discountType == null) {
             return BigDecimal.ZERO;
         }
         

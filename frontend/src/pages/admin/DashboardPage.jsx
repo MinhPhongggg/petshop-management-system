@@ -24,24 +24,33 @@ const DashboardPage = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [dashRes, analyticsRes] = await Promise.all([
+      const [dashResult, analyticsResult] = await Promise.allSettled([
         dashboardApi.getDashboard(),
         analyticsApi.getFullAnalytics(),
       ]);
-      const data = dashRes.data;
-      setStats({
-        totalProducts: data.totalProducts,
-        totalOrders: data.totalOrders,
-        totalBookings: data.totalBookings,
-        totalUsers: data.totalUsers,
-        totalRevenue: data.totalRevenue,
-        orderGrowth: data.orderGrowth,
-        bookingGrowth: data.bookingGrowth,
-        revenueGrowth: data.revenueGrowth,
-      });
-      setRecentOrders(data.recentOrders || []);
-      setRecentBookings(data.recentBookings || []);
-      setAnalytics(analyticsRes.data);
+      if (dashResult.status === 'fulfilled') {
+        const data = dashResult.value.data;
+        setStats({
+          totalProducts: data.totalProducts,
+          totalOrders: data.totalOrders,
+          totalBookings: data.totalBookings,
+          totalUsers: data.totalUsers,
+          totalRevenue: data.totalRevenue,
+          orderGrowth: data.orderGrowth,
+          bookingGrowth: data.bookingGrowth,
+          revenueGrowth: data.revenueGrowth,
+        });
+        setRecentOrders(data.recentOrders || []);
+        setRecentBookings(data.recentBookings || []);
+      } else {
+        console.error('Dashboard API failed:', dashResult.reason);
+      }
+
+      if (analyticsResult.status === 'fulfilled') {
+        setAnalytics(analyticsResult.value.data);
+      } else {
+        console.error('Analytics API failed:', analyticsResult.reason);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiCalendar, FiClock, FiUser, FiCheck, FiAlertCircle } from 'react-icons/fi';
@@ -15,7 +15,6 @@ const BookingPage = () => {
   const [step, setStep] = useState(1);
   const [services, setServices] = useState([]);
   const [pets, setPets] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -50,10 +49,64 @@ const BookingPage = () => {
       setServices(response.data);
     } catch (error) {
       console.error('Error fetching services:', error);
-    } finally {
-      setLoading(false);
     }
   };
+
+  const generateTimeSlots = useCallback(async () => {
+    if (!formData.date) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
+    if (!selectedService) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    const duration = selectedService.duration || 60;
+    const candidateSlots = [];
+
+    for (let hour = 8; hour <= 18; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const endHour = hour + Math.floor((minute + duration) / 60);
+        const endMinute = (minute + duration) % 60;
+
+        if (endHour < 19 || (endHour === 19 && endMinute === 0)) {
+          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+          candidateSlots.push({ time, endTime });
+        }
+      }
+    }
+
+    try {
+      const checkedSlots = await Promise.all(
+        candidateSlots.map(async (slot) => {
+          const res = await bookingsApi.checkAvailability(
+            formData.date,
+            `${slot.time}:00`,
+            `${slot.endTime}:00`
+          );
+          return {
+            time: slot.time,
+            endTime: slot.endTime,
+            available: Boolean(res.data?.available),
+            remainingSlots: Number(res.data?.remainingSlots ?? 0),
+          };
+        })
+      );
+      setAvailableSlots(checkedSlots);
+    } catch (error) {
+      console.error('Error checking slot availability:', error);
+      toast.error('Không thể tải khung giờ khả dụng');
+      setAvailableSlots(candidateSlots.map((slot) => ({
+        ...slot,
+        available: false,
+        remainingSlots: 0,
+      })));
+    }
+  }, [formData.date, formData.serviceId, services]);
 
   const fetchPets = async () => {
     try {
@@ -68,12 +121,8 @@ const BookingPage = () => {
     if (formData.date) {
       generateTimeSlots();
     }
-  }, [formData.date, formData.serviceId]);
+  }, [formData.date, generateTimeSlots]);
 
-<<<<<<< Updated upstream
-  const generateTimeSlots = () => {
-    // Generate time slots from 8:00 to 18:00
-=======
   useEffect(() => {
     const fetchPromotionPreview = async () => {
       if (!isAuthenticated) {
@@ -100,29 +149,6 @@ const BookingPage = () => {
     fetchPromotionPreview();
   }, [isAuthenticated, formData.serviceId, formData.petId, services]);
 
-  const generateTimeSlots = async () => {
-    // Tạo các khung giờ từ 8:00 đến 18:00
->>>>>>> Stashed changes
-    const slots = [];
-    const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
-    const duration = selectedService?.duration || 60;
-
-    for (let hour = 8; hour <= 18; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const endHour = hour + Math.floor((minute + duration) / 60);
-        const endMinute = (minute + duration) % 60;
-        
-        if (endHour < 19 || (endHour === 19 && endMinute === 0)) {
-          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          // Randomly mark some as unavailable for demo
-          const available = Math.random() > 0.3;
-          slots.push({ time, available });
-        }
-      }
-    }
-    setAvailableSlots(slots);
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -140,14 +166,14 @@ const BookingPage = () => {
     try {
       await bookingsApi.create({
         serviceId: parseInt(formData.serviceId) || services.find(s => s.slug === formData.serviceId)?.id,
-        petId: formData.petId || null,
+        petId: formData.petId && formData.petId !== 'new' ? parseInt(formData.petId) : null,
         bookingDate: formData.date,
         startTime: formData.time,
         customerNote: formData.notes,  // BE expects 'customerNote' not 'notes'
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
         customerEmail: formData.customerEmail,
-        petInfo: !formData.petId ? {
+        petInfo: (!formData.petId || formData.petId === 'new') ? {
           name: formData.petName,
           type: formData.petType,
           breed: formData.petBreed,
@@ -171,7 +197,33 @@ const BookingPage = () => {
   };
 
   const selectedService = services.find(s => s.id === parseInt(formData.serviceId) || s.slug === formData.serviceId);
-  const baseEstimatedPrice = selectedService?.pricingList?.[0]?.price || 0;
+  const selectedPet = useMemo(
+    () => pets.find((p) => p.id === parseInt(formData.petId)),
+    [pets, formData.petId]
+  );
+
+  const petWeightForPricing = useMemo(() => {
+    if (formData.petId && formData.petId !== 'new') {
+      return selectedPet?.weight ?? null;
+    }
+    const parsed = parseFloat(formData.petWeight);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [formData.petId, formData.petWeight, selectedPet]);
+
+  const selectedPricingTier = useMemo(() => {
+    if (!selectedService?.pricingList?.length) return null;
+    if (petWeightForPricing == null) return selectedService.pricingList[0];
+
+    return (
+      selectedService.pricingList.find((tier) => {
+        const min = tier.minWeight ?? 0;
+        const max = tier.maxWeight ?? Number.MAX_SAFE_INTEGER;
+        return petWeightForPricing >= min && petWeightForPricing <= max;
+      }) || selectedService.pricingList[selectedService.pricingList.length - 1]
+    );
+  }, [selectedService, petWeightForPricing]);
+
+  const baseEstimatedPrice = selectedPricingTier?.price || selectedService?.pricingList?.[0]?.price || 0;
   const canApplyFreeAtPayment = Boolean(promotionPreview?.canApplyFreeBooking);
   const estimatedPayablePrice = canApplyFreeAtPayment ? 0 : baseEstimatedPrice;
 
@@ -187,7 +239,8 @@ const BookingPage = () => {
     if (step === 2) return formData.date && formData.time;
     if (step === 3) {
       if (isAuthenticated) {
-        return formData.petId || (formData.petName && formData.petWeight);
+        if (formData.petId && formData.petId !== 'new') return true;
+        return formData.petName && formData.petWeight;
       }
       return formData.customerName && formData.customerPhone && formData.petName && formData.petWeight;
     }
@@ -333,7 +386,10 @@ const BookingPage = () => {
                                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             }`}
                           >
-                            {slot.time}
+                            <div>{slot.time}</div>
+                            <div className="text-[10px] opacity-80">
+                              {slot.available ? `Còn ${slot.remainingSlots}` : 'Đầy'}
+                            </div>
                           </button>
                         ))}
                       </div>
@@ -591,6 +647,20 @@ const BookingPage = () => {
                             : formData.petName}
                         </span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Cân nặng</span>
+                        <span className="font-semibold">
+                          {petWeightForPricing != null ? `${petWeightForPricing} kg` : 'Chưa xác định'}
+                        </span>
+                      </div>
+                      {selectedPricingTier && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Mức giá áp dụng</span>
+                          <span className="font-semibold">
+                            {selectedPricingTier.tierName || `${selectedPricingTier.minWeight ?? 0}-${selectedPricingTier.maxWeight ?? '∞'}kg`}
+                          </span>
+                        </div>
+                      )}
                       {(!isAuthenticated || formData.petId === 'new') && (
                         <>
                           <div className="flex justify-between">
@@ -622,7 +692,7 @@ const BookingPage = () => {
                   </div>
 
                   <p className="text-sm text-gray-500 mb-6">
-                    * Giá có thể thay đổi tùy theo cân nặng và tình trạng thú cưng. 
+                    * Giá được tính theo cân nặng hiện tại của thú cưng. 
                     Nhân viên sẽ liên hệ xác nhận trong vòng 30 phút. Khuyến mãi miễn phí được áp dụng tại bước thanh toán.
                   </p>
                 </div>

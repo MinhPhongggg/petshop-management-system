@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCalendar, FiClock, FiArrowLeft, FiX, FiRefreshCw, FiUser, FiPhone, FiMail, FiFileText } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiArrowLeft, FiX, FiRefreshCw, FiUser, FiFileText } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { bookingsApi } from '../../services/api';
@@ -13,11 +13,7 @@ const BookingDetailPage = () => {
   const [promotionProgress, setPromotionProgress] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchBooking();
-  }, [id]);
-
-  const fetchBooking = async () => {
+  const fetchBooking = useCallback(async () => {
     try {
       const response = await bookingsApi.getById(id);
       const bookingData = response.data;
@@ -40,7 +36,11 @@ const BookingDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
+
+  useEffect(() => {
+    fetchBooking();
+  }, [fetchBooking]);
 
   const handleCancelBooking = async () => {
     if (!window.confirm('Bạn có chắc muốn hủy lịch hẹn này?')) return;

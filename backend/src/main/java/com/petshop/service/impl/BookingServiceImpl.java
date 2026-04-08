@@ -11,6 +11,7 @@ import com.petshop.repository.*;
 import com.petshop.security.UserPrincipal;
 import com.petshop.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +33,9 @@ import java.util.stream.Collectors;
 public class BookingServiceImpl implements BookingService {
 
     private static final int PROMOTION_REQUIRED_COMPLETED_BOOKINGS = 3;
+
+    @Value("${petshop.booking.max-slots-per-timeslot:3}")
+    private int maxBookingsPerSlot;
     
     private final BookingRepository bookingRepository;
     private final SpaServiceRepository spaServiceRepository;
@@ -105,20 +109,20 @@ public class BookingServiceImpl implements BookingService {
     
     @Override
     public boolean isTimeSlotAvailable(LocalDate date, LocalTime startTime, LocalTime endTime) {
+        return getAvailableSlotCount(date, startTime, endTime) > 0;
+    }
+
+    @Override
+    public int getAvailableSlotCount(LocalDate date, LocalTime startTime, LocalTime endTime) {
         List<Booking> existingBookings = bookingRepository.findByDate(date);
-        
-        for (Booking booking : existingBookings) {
-            if (booking.getStatus() == Booking.BookingStatus.CANCELLED) {
-                continue;
-            }
-            
-            // Check overlap
-            if (startTime.isBefore(booking.getEndTime()) && endTime.isAfter(booking.getStartTime())) {
-                return false;
-            }
-        }
-        
-        return true;
+
+        long overlappingCount = existingBookings.stream()
+            .filter(booking -> booking.getStatus() != Booking.BookingStatus.CANCELLED)
+            .filter(booking -> booking.getStatus() != Booking.BookingStatus.NO_SHOW)
+            .filter(booking -> startTime.isBefore(booking.getEndTime()) && endTime.isAfter(booking.getStartTime()))
+            .count();
+
+        return Math.max(0, maxBookingsPerSlot - (int) overlappingCount);
     }
     
     @Override

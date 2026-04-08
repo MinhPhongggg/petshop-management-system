@@ -68,10 +68,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                           @Param("startDate") LocalDateTime startDate,
                                           @Param("endDate") LocalDateTime endDate);
     
-    // Recent bookings for dashboard
-    List<Booking> findTop5ByOrderByCreatedAtDesc();
-<<<<<<< Updated upstream
-=======
+       // Recent bookings for dashboard
+       List<Booking> findTop5ByOrderByCreatedAtDesc();
     
     // ==================== ANALYTICS QUERIES ====================
     
@@ -175,5 +173,23 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                    "GROUP BY p.id, p.name, p.type, p.breed, u.full_name " +
                    "ORDER BY service_spending DESC LIMIT 10", nativeQuery = true)
     List<Object[]> getVipPetServiceSpending();
->>>>>>> Stashed changes
+
+       // Booking COMPLETED trong khoảng thời gian cần nhắc nhở và chưa từng gửi nhắc nhở
+       @Query(value = "SELECT b.* FROM bookings b " +
+                               "WHERE b.status = 'COMPLETED' " +
+                               "AND ((b.completed_at IS NOT NULL AND b.completed_at BETWEEN :startDateTime AND :endDateTime) " +
+                               "OR (b.completed_at IS NULL AND b.booking_date BETWEEN :startDate AND :endDate)) " +
+                               "AND NOT EXISTS (SELECT 1 FROM spa_reminder_logs r WHERE r.booking_id = b.id)",
+                 nativeQuery = true)
+       List<Booking> findCompletedBookingsForReminder(@Param("startDateTime") LocalDateTime startDateTime,
+                                                                                       @Param("endDateTime") LocalDateTime endDateTime,
+                                                                                       @Param("startDate") LocalDate startDate,
+                                                                                       @Param("endDate") LocalDate endDate);
+
+       // Tất cả booking COMPLETED chưa gửi nhắc nhở
+       @Query(value = "SELECT b.* FROM bookings b " +
+                               "WHERE b.status = 'COMPLETED' " +
+                               "AND NOT EXISTS (SELECT 1 FROM spa_reminder_logs r WHERE r.booking_id = b.id)",
+                 nativeQuery = true)
+       List<Booking> findAllCompletedNotReminded();
 }

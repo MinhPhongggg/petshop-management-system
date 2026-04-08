@@ -6,7 +6,7 @@ import { Navigation, Thumbs, Zoom } from 'swiper/modules';
 import { FiStar, FiShoppingCart, FiHeart, FiShare2, FiMinus, FiPlus, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import { useCartStore } from '../store/cartStore';
 import ProductCard from '../components/product/ProductCard';
-import { productsApi } from '../services/api';
+import { productsApi, reviewsApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -23,6 +23,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1);
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
   const [activeTab, setActiveTab] = useState('description');
+  const [reviews, setReviews] = useState([]);
   
   const { addItem, addItemLocal } = useCartStore();
   const { isAuthenticated } = useAuthStore();
@@ -32,12 +33,21 @@ const ProductDetailPage = () => {
     try {
       const response = await productsApi.getBySlug(slug);
       setProduct(response.data);
+
+      if (response.data?.id) {
+        const reviewsRes = await reviewsApi.getByProduct(response.data.id, { page: 0, size: 20 });
+        setReviews(reviewsRes.data?.content || []);
+      } else {
+        setReviews([]);
+      }
+
       if (response.data.variants?.length > 0) {
         setSelectedVariant(response.data.variants[0]);
       }
       // Fetch related products
-      if (response.data.category?.id) {
-        const relatedRes = await productsApi.getByCategory(response.data.category.id, { size: 4 });
+      const categoryId = response.data.category?.id || response.data.categoryId;
+      if (categoryId) {
+        const relatedRes = await productsApi.getByCategory(categoryId, { size: 4 });
         setRelatedProducts(relatedRes.data.content?.filter(p => p.id !== response.data.id) || []);
       }
     } catch (error) {
@@ -109,8 +119,8 @@ const ProductDetailPage = () => {
           <span>/</span>
           <Link to="/products" className="hover:text-petshop-orange">Sản phẩm</Link>
           <span>/</span>
-          <Link to={`/products?category=${product.category?.slug}`} className="hover:text-petshop-orange">
-            {product.category?.name}
+          <Link to={`/products${product.category?.slug ? `?category=${product.category.slug}` : (product.categoryId ? `?categoryId=${product.categoryId}` : '')}`} className="hover:text-petshop-orange">
+            {product.category?.name || product.categoryName}
           </Link>
           <span>/</span>
           <span className="text-gray-800">{product.name}</span>
@@ -176,7 +186,7 @@ const ProductDetailPage = () => {
                   </span>
                 )}
                 <span className="px-3 py-1 bg-petshop-green/10 text-petshop-green text-sm font-medium rounded-full">
-                  {product.brand?.name}
+                  {product.brand?.name || product.brandName}
                 </span>
               </div>
 
@@ -338,7 +348,7 @@ const ProductDetailPage = () => {
                       : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
-                  {tab === 'description' ? 'Mô tả sản phẩm' : `Đánh giá (${product.reviewCount})`}
+                  {tab === 'description' ? 'Mô tả sản phẩm' : `Đánh giá (${reviews.length || product.reviewCount || 0})`}
                   {activeTab === tab && (
                     <motion.div
                       layoutId="activeTab"
@@ -357,14 +367,14 @@ const ProductDetailPage = () => {
                 />
               ) : (
                 <div className="space-y-6">
-                  {product.reviews?.map((review) => (
+                  {reviews.length > 0 ? reviews.map((review) => (
                     <div key={review.id} className="border-b pb-6">
                       <div className="flex items-center gap-4 mb-3">
                         <div className="w-10 h-10 bg-petshop-orange/20 rounded-full flex items-center justify-center text-petshop-orange font-bold">
-                          {review.user?.fullName?.charAt(0)}
+                          {review.userName?.charAt(0) || 'U'}
                         </div>
                         <div>
-                          <p className="font-semibold">{review.user?.fullName}</p>
+                          <p className="font-semibold">{review.userName}</p>
                           <div className="flex items-center gap-1">
                             {[...Array(5)].map((_, i) => (
                               <FiStar
@@ -382,9 +392,13 @@ const ProductDetailPage = () => {
                           {new Date(review.createdAt).toLocaleDateString('vi-VN')}
                         </span>
                       </div>
-                      <p className="text-gray-600">{review.comment}</p>
+                      <p className="text-gray-600">{review.content}</p>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center text-gray-500 py-8">
+                      Chưa có đánh giá nào cho sản phẩm này
+                    </div>
+                  )}
                 </div>
               )}
             </div>

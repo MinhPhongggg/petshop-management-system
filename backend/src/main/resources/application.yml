@@ -72,6 +72,9 @@ logging:
 
 # Pet Shop Specific Configuration
 petshop:
+  booking:
+    max-slots-per-timeslot: 3 # Số thú cưng tối đa cho mỗi khung giờ
+
   points:
     earn-rate: 1000 # 1000 VND = 1 điểm
     redeem-value: 100 # 1 điểm = 100 VND
