@@ -100,15 +100,29 @@ public class AnalyticsDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RetailInventoryAnalytics {
-        // Cảnh báo hết hàng
         private List<LowStockAlert> lowStockAlerts;
         private Long lowStockCount;
         private Long outOfStockCount;
-        // Tốc độ bán hàng (Sales Velocity)
+        private List<ExpiryAlert> expiryAlerts;
+        private Long expiringCount;
         private List<SalesVelocity> salesVelocities;
-        // Tổng giá trị tồn kho
         private BigDecimal totalInventoryValue;
         private Long totalVariants;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ExpiryAlert {
+        private Long variantId;
+        private String productName;
+        private String variantName;
+        private String sku;
+        private String expiryDate;
+        private long daysUntilExpiry;
+        private int currentStock;
+        private String urgency;
     }
 
     @Data

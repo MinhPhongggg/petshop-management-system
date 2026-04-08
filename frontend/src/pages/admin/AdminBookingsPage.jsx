@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { FiSearch, FiEye, FiCheck, FiX, FiCalendar, FiClock } from 'react-icons/fi';
 import { MdPets } from 'react-icons/md';
 import toast from 'react-hot-toast';
-import { bookingsApi } from '../../services/api';
+import { bookingsApi, paymentsApi } from '../../services/api';
 
 const AdminBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
@@ -70,9 +70,34 @@ const AdminBookingsPage = () => {
     { id: 'CANCELLED', label: 'Đã hủy' },
   ];
 
+  const getDepositBadge = (depositStatus) => {
+    const config = {
+      NONE: null,
+      PENDING: { bg: 'bg-pink-100', text: 'text-pink-600', label: 'Chờ cọc' },
+      PAID: { bg: 'bg-green-100', text: 'text-green-600', label: 'Đã cọc' },
+      EXPIRED: { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Hết hạn cọc' },
+      REFUNDED: { bg: 'bg-orange-100', text: 'text-orange-600', label: 'Đã hoàn cọc' },
+    };
+    const c = config[depositStatus];
+    if (!c) return null;
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{c.label}</span>;
+  };
+
+  const handleRefundDeposit = async (bookingId) => {
+    if (!window.confirm('Bạn có chắc muốn hoàn cọc cho lịch hẹn này?')) return;
+    try {
+      await paymentsApi.refundDeposit(bookingId, 'Admin hủy lịch - hoàn cọc');
+      toast.success('Hoàn cọc thành công');
+      fetchBookings();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Hoàn cọc thất bại');
+    }
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       PENDING: { bg: 'bg-yellow-100', text: 'text-yellow-600', label: 'Chờ xác nhận' },
+      DEPOSIT_PENDING: { bg: 'bg-pink-100', text: 'text-pink-600', label: 'Chờ thanh toán cọc' },
       CONFIRMED: { bg: 'bg-blue-100', text: 'text-blue-600', label: 'Đã xác nhận' },
       IN_PROGRESS: { bg: 'bg-purple-100', text: 'text-purple-600', label: 'Đang thực hiện' },
       COMPLETED: { bg: 'bg-green-100', text: 'text-green-600', label: 'Hoàn thành' },

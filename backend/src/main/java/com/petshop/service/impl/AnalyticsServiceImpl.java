@@ -207,6 +207,29 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         long lowStockCount = productVariantRepository.countLowStock(10);
         long outOfStockCount = productVariantRepository.countOutOfStock();
 
+        // Cảnh báo hết hạn sử dụng (30 ngày)
+        LocalDate expiryThreshold = LocalDate.now().plusDays(30);
+        List<AnalyticsDTO.ExpiryAlert> expiryAlerts = productVariantRepository.findExpiringBefore(expiryThreshold)
+                .stream()
+                .map(v -> {
+                    long daysLeft = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), v.getExpiryDate());
+                    String urgency;
+                    if (daysLeft <= 7) urgency = "CRITICAL";
+                    else if (daysLeft <= 14) urgency = "WARNING";
+                    else urgency = "LOW";
+                    return AnalyticsDTO.ExpiryAlert.builder()
+                            .variantId(v.getId())
+                            .productName(v.getProduct().getName())
+                            .variantName(v.getName())
+                            .sku(v.getSku())
+                            .expiryDate(v.getExpiryDate().toString())
+                            .daysUntilExpiry(daysLeft)
+                            .currentStock(v.getStock())
+                            .urgency(urgency)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
         // Tốc độ bán hàng (Sales Velocity)
         List<Object[]> velocityData = productRepository.getSalesVelocity();
         List<AnalyticsDTO.SalesVelocity> salesVelocities = velocityData.stream()
@@ -235,6 +258,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .lowStockAlerts(allAlerts)
                 .lowStockCount(lowStockCount)
                 .outOfStockCount(outOfStockCount)
+                .expiryAlerts(expiryAlerts)
+                .expiringCount((long) expiryAlerts.size())
                 .salesVelocities(salesVelocities)
                 .totalInventoryValue(totalInventoryValue)
                 .totalVariants(totalVariants)

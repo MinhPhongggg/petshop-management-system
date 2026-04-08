@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -25,6 +26,9 @@ public class StockMovementDTO {
     private Integer quantityBefore;
     private Integer quantityAfter;
     private String note;
+    private BigDecimal unitCost;
+    private String referenceType;
+    private String referenceCode;
     
     private Long orderId;
     private String orderCode;

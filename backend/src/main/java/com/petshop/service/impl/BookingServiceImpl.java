@@ -410,7 +410,10 @@ public class BookingServiceImpl implements BookingService {
     private void validateStatusTransition(Booking.BookingStatus current, Booking.BookingStatus next) {
         boolean valid = switch (current) {
             case PENDING -> next == Booking.BookingStatus.CONFIRMED || 
+                           next == Booking.BookingStatus.DEPOSIT_PENDING ||
                            next == Booking.BookingStatus.CANCELLED;
+            case DEPOSIT_PENDING -> next == Booking.BookingStatus.CONFIRMED ||
+                                    next == Booking.BookingStatus.CANCELLED;
             case CONFIRMED -> next == Booking.BookingStatus.IN_PROGRESS || 
                              next == Booking.BookingStatus.CANCELLED ||
                              next == Booking.BookingStatus.NO_SHOW;
@@ -488,6 +491,12 @@ public class BookingServiceImpl implements BookingService {
             .customerNote(booking.getCustomerNote())
             .staffNote(booking.getStaffNote())
             .cancelReason(booking.getCancelReason())
+            .depositStatus(booking.getDepositStatus())
+            .depositAmount(booking.getDepositAmount())
+            .remainingAmount(booking.getRemainingAmount())
+            .momoTransactionId(booking.getMomoTransactionId())
+            .depositExpiresAt(booking.getDepositExpiresAt())
+            .depositPaidAt(booking.getDepositPaidAt())
             .staffId(booking.getStaff() != null ? booking.getStaff().getId() : null)
             .staffName(booking.getStaff() != null ? booking.getStaff().getFullName() : null)
             .confirmedAt(booking.getConfirmedAt())

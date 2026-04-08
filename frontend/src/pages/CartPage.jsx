@@ -145,13 +145,21 @@ const CartPage = () => {
     }, 100);
   };
 
+  const getImageUrl = (url) => {
+    if (url && url.startsWith('/images/')) {
+      return url;
+    }
+    return url || '/images/paw-pattern.svg';
+  };
+
   const getItemInfo = (item) => {
     const slug = item.productSlug || item.product?.slug;
     const name = item.productName || item.product?.name;
-    const image =
+    const image = getImageUrl(
       item.productImage ||
-      item.product?.images?.[0]?.url ||
-      'https://via.placeholder.com/120';
+      item.product?.images?.[0]?.imageUrl ||
+      item.product?.images?.[0]?.url
+    );
 
     const variantName = item.variantName || item.variant?.name;
     const unitPrice =
@@ -265,6 +273,7 @@ const CartPage = () => {
                     <img
                       src={info.image}
                       alt={info.name}
+                      onError={(e) => { e.target.onerror = null; e.target.src = '/images/paw-pattern.svg'; }}
                       className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-xl"
                     />
                   </Link>

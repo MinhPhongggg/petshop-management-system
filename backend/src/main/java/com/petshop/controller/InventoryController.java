@@ -29,6 +29,11 @@ public class InventoryController {
     public ResponseEntity<StockMovementDTO> importStock(@Valid @RequestBody StockMovementRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.importStock(request));
     }
+
+    @PostMapping("/export")
+    public ResponseEntity<StockMovementDTO> exportStock(@Valid @RequestBody StockMovementRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.exportStock(request));
+    }
     
     @PostMapping("/adjust")
     public ResponseEntity<StockMovementDTO> adjustStock(@Valid @RequestBody StockMovementRequest request) {
@@ -50,5 +55,15 @@ public class InventoryController {
     @GetMapping("/out-of-stock")
     public ResponseEntity<List<ProductVariantDTO>> getOutOfStockProducts() {
         return ResponseEntity.ok(inventoryService.getOutOfStockProducts());
+    }
+
+    @GetMapping("/over-stock")
+    public ResponseEntity<List<ProductVariantDTO>> getOverStockProducts() {
+        return ResponseEntity.ok(inventoryService.getOverStockProducts());
+    }
+    
+    @GetMapping("/expiring")
+    public ResponseEntity<List<ProductVariantDTO>> getExpiringProducts() {
+        return ResponseEntity.ok(inventoryService.getExpiringProducts());
     }
 }

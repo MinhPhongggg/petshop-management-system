@@ -100,6 +100,13 @@ const CheckoutPage = () => {
     }
   };
 
+  const getImageUrl = (url) => {
+    if (url && url.startsWith('/images/')) {
+      return url;
+    }
+    return url || '/images/paw-pattern.svg';
+  };
+
   const handleSelectFromWallet = (voucher) => {
     setVoucherCode(voucher.code);
     setShowVoucherModal(false);
@@ -157,11 +164,18 @@ const CheckoutPage = () => {
         })),
       };
 
-      await ordersApi.create(orderData);
-      
+      const orderRes = await ordersApi.create(orderData);
+      const createdOrder = orderRes.data;
+
       await clearCart();
-      toast.success('Đặt hàng thành công!');
-      navigate(`/my-orders`);
+
+      // Nếu thanh toán MoMo -> chuyển sang trang thanh toán MoMo
+      if (formData.paymentMethod === 'MOMO') {
+        navigate(`/payment/momo/${createdOrder.id}`, { state: { order: createdOrder } });
+      } else {
+        toast.success('Đặt hàng thành công!');
+        navigate(`/my-orders`);
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
@@ -362,6 +376,26 @@ const CheckoutPage = () => {
                     </div>
                     <span className="text-2xl">💵</span>
                   </label>
+
+                  <label className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    formData.paymentMethod === 'MOMO'
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-pink-300'
+                  }`}>
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="MOMO"
+                      checked={formData.paymentMethod === 'MOMO'}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-pink-500"
+                    />
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-800">Ví MoMo</span>
+                      <p className="text-sm text-gray-500">Thanh toán qua ví điện tử MoMo</p>
+                    </div>
+                    <span className="text-2xl">📱</span>
+                  </label>
                 </div>
               </motion.div>
             </div>
@@ -383,7 +417,7 @@ const CheckoutPage = () => {
                   {items.map((item) => (
                     (() => {
                       const productName = item.productName || item.product?.name;
-                      const productImage = item.productImage || item.product?.images?.[0]?.url || 'https://via.placeholder.com/60';
+                      const productImage = getImageUrl(item.productImage || item.product?.images?.[0]?.imageUrl || item.product?.images?.[0]?.url);
                       const variantName = item.variantName || item.variant?.name;
                       const unitPrice = item.currentPrice || item.price || item.variant?.price || item.product?.salePrice || item.product?.basePrice || 0;
                       const lineTotal = (item.subtotal ?? unitPrice * item.quantity) || 0;
@@ -392,6 +426,7 @@ const CheckoutPage = () => {
                       <img
                         src={productImage}
                         alt={productName}
+                        onError={(e) => { e.target.onerror = null; e.target.src = '/images/paw-pattern.svg'; }}
                         className="w-16 h-16 object-cover rounded-lg"
                       />
                       <div className="flex-1 min-w-0">
@@ -491,11 +526,15 @@ const CheckoutPage = () => {
                   disabled={loading}
                   className="btn-primary w-full disabled:opacity-50"
                 >
-                  {loading ? 'Đang xử lý...' : 'Đặt hàng'}
+                  {loading 
+                    ? (formData.paymentMethod === 'MOMO' ? 'Đang thanh toán MoMo...' : 'Đang xử lý...') 
+                    : (formData.paymentMethod === 'MOMO' ? 'Thanh toán MoMo' : 'Đặt hàng')}
                 </button>
 
                 <p className="text-xs text-gray-500 text-center mt-4">
-                  Hệ thống hiện hỗ trợ thanh toán khi nhận hàng (COD).
+                  {formData.paymentMethod === 'MOMO' 
+                    ? 'Đơn hàng sẽ được thanh toán qua ví MoMo sau khi đặt hàng.'
+                    : 'Hệ thống hiện hỗ trợ thanh toán khi nhận hàng (COD).'}
                 </p>
               </motion.div>
             </div>

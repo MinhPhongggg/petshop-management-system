@@ -22,6 +22,9 @@ public class RewardProgressDTO {
     // Tổng chi tiêu hiện tại
     private BigDecimal totalSpending;
 
+    // Điểm tích lũy còn khả dụng
+    private Long availablePoints;
+
     // Số đơn hoàn thành
     private Long completedOrders;
 

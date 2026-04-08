@@ -21,6 +21,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,24 +38,34 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public StockMovementDTO importStock(StockMovementRequest request) {
+        if (request.getQuantity() == null || request.getQuantity() <= 0) {
+            throw new BadRequestException("Số lượng nhập phải lớn hơn 0");
+        }
         ProductVariant variant = productVariantRepository.findById(request.getVariantId())
             .orElseThrow(() -> new ResourceNotFoundException("Biến thể sản phẩm không tồn tại"));
         
         User user = getCurrentUser();
         
         int previousStock = variant.getStock();
-        int newStock = previousStock + request.getQuantity();
+        int importQty = request.getQuantity();
+        int newStock = previousStock + importQty;
         
+        if (request.getUnitPrice() != null && request.getUnitPrice().compareTo(BigDecimal.ZERO) > 0) {
+            applyWeightedAverageCost(variant, importQty, request.getUnitPrice());
+        }
         variant.setStock(newStock);
         productVariantRepository.save(variant);
         
         StockMovement movement = StockMovement.builder()
             .variant(variant)
             .movementType(StockMovement.MovementType.IMPORT)
-            .quantity(request.getQuantity())
+            .quantity(importQty)
             .quantityBefore(previousStock)
             .quantityAfter(newStock)
             .note(request.getNote())
+            .unitCost(variant.getAverageCost())
+            .referenceType("MANUAL_IMPORT")
+            .referenceCode(request.getReferenceCode())
             .createdBy(user)
             .build();
         
@@ -69,7 +82,11 @@ public class InventoryServiceImpl implements InventoryService {
         User user = getCurrentUser();
         
         int previousStock = variant.getStock();
-        int newStock = previousStock + request.getQuantity(); // Can be negative for reduction
+        if (request.getQuantity() == null || request.getQuantity() == 0) {
+            throw new BadRequestException("Số lượng điều chỉnh không hợp lệ");
+        }
+        int deltaQty = request.getQuantity(); // positive -> ADJUST_IN, negative -> ADJUST_OUT
+        int newStock = previousStock + deltaQty;
         
         if (newStock < 0) {
             throw new BadRequestException("Số lượng tồn kho không thể âm");
@@ -80,11 +97,14 @@ public class InventoryServiceImpl implements InventoryService {
         
         StockMovement movement = StockMovement.builder()
             .variant(variant)
-            .movementType(StockMovement.MovementType.ADJUSTMENT)
-            .quantity(Math.abs(request.getQuantity()))
+            .movementType(deltaQty > 0 ? StockMovement.MovementType.ADJUST_IN : StockMovement.MovementType.ADJUST_OUT)
+            .quantity(deltaQty)
             .quantityBefore(previousStock)
             .quantityAfter(newStock)
             .note(request.getNote())
+            .unitCost(variant.getAverageCost())
+            .referenceType("STOCK_AUDIT_ADJUST")
+            .referenceCode(request.getReferenceCode())
             .createdBy(user)
             .build();
         
@@ -100,8 +120,7 @@ public class InventoryServiceImpl implements InventoryService {
     
     @Override
     public List<ProductVariantDTO> getLowStockProducts() {
-        int threshold = 10; // Default threshold
-        return productVariantRepository.findLowStock(threshold).stream()
+        return productVariantRepository.findLowStockDynamic().stream()
             .map(this::mapToVariantDTO)
             .collect(Collectors.toList());
     }
@@ -111,6 +130,63 @@ public class InventoryServiceImpl implements InventoryService {
         return productVariantRepository.findOutOfStock().stream()
             .map(this::mapToVariantDTO)
             .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<ProductVariantDTO> getExpiringProducts() {
+        LocalDate threshold = LocalDate.now().plusDays(30);
+        return productVariantRepository.findExpiringBefore(threshold).stream()
+            .map(this::mapToVariantDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public StockMovementDTO exportStock(StockMovementRequest request) {
+        if (request.getQuantity() == null || request.getQuantity() <= 0) {
+            throw new BadRequestException("Số lượng xuất phải lớn hơn 0");
+        }
+        if (request.getMovementType() != StockMovement.MovementType.EXPORT_DAMAGE &&
+                request.getMovementType() != StockMovement.MovementType.EXPORT_RETURN_SUPPLIER &&
+                request.getMovementType() != StockMovement.MovementType.EXPORT_SALE) {
+            throw new BadRequestException("Loại xuất kho không hợp lệ");
+        }
+
+        ProductVariant variant = productVariantRepository.findById(request.getVariantId())
+                .orElseThrow(() -> new ResourceNotFoundException("Biến thể sản phẩm không tồn tại"));
+        User user = getCurrentUser();
+
+        int previousStock = variant.getStock();
+        int deltaQty = -request.getQuantity();
+        int newStock = previousStock + deltaQty;
+        if (newStock < 0) {
+            throw new BadRequestException("Số lượng tồn kho không thể âm");
+        }
+
+        variant.setStock(newStock);
+        productVariantRepository.save(variant);
+
+        StockMovement movement = StockMovement.builder()
+                .variant(variant)
+                .movementType(request.getMovementType())
+                .quantity(deltaQty)
+                .quantityBefore(previousStock)
+                .quantityAfter(newStock)
+                .note(request.getNote())
+                .unitCost(variant.getAverageCost())
+                .referenceType("MANUAL_EXPORT")
+                .referenceCode(request.getReferenceCode())
+                .createdBy(user)
+                .build();
+        movement = stockMovementRepository.save(movement);
+        return mapToDTO(movement);
+    }
+
+    @Override
+    public List<ProductVariantDTO> getOverStockProducts() {
+        return productVariantRepository.findOverStock().stream()
+                .map(this::mapToVariantDTO)
+                .collect(Collectors.toList());
     }
     
     private User getCurrentUser() {
@@ -135,6 +211,9 @@ public class InventoryServiceImpl implements InventoryService {
             .quantityBefore(movement.getQuantityBefore())
             .quantityAfter(movement.getQuantityAfter())
             .note(movement.getNote())
+            .unitCost(movement.getUnitCost())
+            .referenceType(movement.getReferenceType())
+            .referenceCode(movement.getReferenceCode())
             .createdByName(movement.getCreatedBy().getFullName())
             .createdAt(movement.getCreatedAt())
             .build();
@@ -147,9 +226,33 @@ public class InventoryServiceImpl implements InventoryService {
             .productName(variant.getProduct().getName())
             .name(variant.getName())
             .sku(variant.getSku())
+            .barcode(variant.getBarcode())
+            .unit(variant.getUnit())
             .price(variant.getPrice())
+            .lastImportPrice(variant.getLastImportPrice())
+            .averageCost(variant.getAverageCost())
             .stock(variant.getStock())
+            .minStock(variant.getMinStock())
+            .maxStock(variant.getMaxStock())
+            .expiryDate(variant.getExpiryDate())
             .active(variant.isActive())
             .build();
+    }
+
+    private void applyWeightedAverageCost(ProductVariant variant, int importQty, BigDecimal importUnitPrice) {
+        int oldStock = Math.max(variant.getStock(), 0);
+        BigDecimal oldCost = variant.getAverageCost() != null ? variant.getAverageCost() : BigDecimal.ZERO;
+
+        BigDecimal oldTotal = oldCost.multiply(BigDecimal.valueOf(oldStock));
+        BigDecimal inTotal = importUnitPrice.multiply(BigDecimal.valueOf(importQty));
+        int newTotalQty = oldStock + importQty;
+
+        BigDecimal newAverage = BigDecimal.ZERO;
+        if (newTotalQty > 0) {
+            newAverage = oldTotal.add(inTotal)
+                    .divide(BigDecimal.valueOf(newTotalQty), 2, RoundingMode.HALF_UP);
+        }
+        variant.setLastImportPrice(importUnitPrice);
+        variant.setAverageCost(newAverage);
     }
 }
